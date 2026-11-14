@@ -3,11 +3,11 @@ import EnquiryForm from '../../components/EnquiryForm';
 import Heading from '../../components/Heading';
 import InfoCard from '../../components/InfoCard';
 import Reveal from '../../components/Reveal';
-import { hasWhatsApp, whatsappDisplay, whatsappLink } from '../../lib/whatsapp';
+import { hasWhatsApp, whatsappLink } from '../../lib/whatsapp';
 
-// The WhatsApp card shows the real number and opens a chat once a number is set in site.js.
+// The WhatsApp card opens a chat once a number is set (.env.local) — the number is not displayed.
 const withWhatsApp = ({ whatsapp, ...item }) =>
-  whatsapp && hasWhatsApp ? { ...item, value: whatsappDisplay, href: whatsappLink('general') } : item;
+  whatsapp && hasWhatsApp ? { ...item, href: whatsappLink('general') } : item;
 
 /** "Say hello." contact methods beside the enquiry form. */
 export default function ContactMain() {

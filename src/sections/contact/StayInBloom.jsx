@@ -3,7 +3,7 @@ import { socials } from '../../data/site';
 import Heading from '../../components/Heading';
 import InfoCard from '../../components/InfoCard';
 import Reveal from '../../components/Reveal';
-import { hasWhatsApp, socialHref, whatsappDisplay } from '../../lib/whatsapp';
+import { socialHref } from '../../lib/whatsapp';
 
 const hrefFor = (icon) => {
   const social = socials.find((s) => s.icon === icon);
@@ -27,7 +27,6 @@ export default function StayInBloom() {
             <Reveal as="li" key={item.title} delay={i * 0.08}>
               <InfoCard
                 {...item}
-                value={item.icon === 'whatsapp' && hasWhatsApp ? whatsappDisplay : item.value}
                 href={hrefFor(item.icon)} align="center" className="bg-cream px-6 pt-[26px] pb-6" />
             </Reveal>
           ))}

@@ -14,7 +14,8 @@ export const contactMethods = {
   note: '', // design had 'Contact details are editable placeholders.' — removed now that details are real
   // Add `href` (tel:, https://wa.me/…, mailto:, maps link, profile URL) and the card becomes a link.
   items: [
-    { title: 'WhatsApp', value: '[+91 WhatsApp number]', whatsapp: true }, // filled from site.js `whatsapp.number`
+    // The number itself is never shown; the card opens a WhatsApp chat (number from .env.local).
+    { title: 'WhatsApp', value: 'Chat with us on WhatsApp', whatsapp: true },
     { title: 'Email us', value: business.email, href: `mailto:${business.email}` },
     { title: 'Find us', value: business.location },
     { title: 'Instagram', value: instagram.handle, href: instagram.url },
@@ -52,6 +53,6 @@ export const stayInBloom = {
   // Profile URLs come from `socials` in site.js once added.
   items: [
     { icon: 'instagram', title: 'Instagram', value: instagram.handle },
-    { icon: 'whatsapp', title: 'WhatsApp', value: '[Add WhatsApp profile link]' },
+    { icon: 'whatsapp', title: 'WhatsApp', value: 'Chat with us on WhatsApp' },
   ],
 };
