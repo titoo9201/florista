@@ -4,6 +4,7 @@ import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import Img from '../components/Img';
 import Reveal from '../components/Reveal';
+import { ctaHref } from '../lib/whatsapp';
 
 /** "Your colours. Your story." — custom creation call-to-action. */
 export default function CustomOrder() {
@@ -28,7 +29,7 @@ export default function CustomOrder() {
             className="mt-5 text-[40px] leading-[1.07] md:text-[48px] xl:text-[58px] xl:leading-[64px]"
           />
           <p className="mt-5 max-w-[610px] text-sm leading-6">{customOrder.body}</p>
-          <Button href={customOrder.cta.href} className="mt-[22px]">
+          <Button href={ctaHref(customOrder.cta)} className="mt-[22px]">
             {customOrder.cta.label}
           </Button>
         </Reveal>

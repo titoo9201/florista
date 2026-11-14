@@ -33,7 +33,7 @@ export const candleCollection = {
   editLabel: 'The candle & decor edit',
   unit: { one: 'creation', other: 'creations' },
   note: 'Preview collection · Names, images and ₹[price] await owner details.',
-  cta: { label: 'Contact for Order', href: '#contact' },
+  cta: { label: 'Contact for Order', href: '#contact', whatsapp: 'order' },
   // NOTE: category tags are placeholders (the design doesn't specify them) — adjust freely.
   items: [
     {
@@ -90,5 +90,5 @@ export const candleCollection = {
 export const candlesCta = {
   title: 'Little details. Beautiful feelings.',
   body: 'Looking for a personal gift or a special finishing touch? Tell us about the little things you love.',
-  cta: { label: 'Let’s find your perfect gift', href: '#contact' },
+  cta: { label: 'Let’s find your perfect gift', href: '#contact', whatsapp: 'gift' },
 };

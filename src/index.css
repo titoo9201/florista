@@ -59,3 +59,18 @@
     padding-inline: 5rem;
   }
 }
+
+/* Briefly highlights a product card reached via a link like /bouquets#peony-candle */
+@keyframes target-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  20%,
+  70% {
+    box-shadow: 0 0 0 3px var(--color-rose), var(--shadow-card-hover);
+  }
+}
+[data-target-flash] > article {
+  animation: target-flash 2s ease-in-out 0.4s 1;
+}

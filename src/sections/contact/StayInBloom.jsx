@@ -3,8 +3,12 @@ import { socials } from '../../data/site';
 import Heading from '../../components/Heading';
 import InfoCard from '../../components/InfoCard';
 import Reveal from '../../components/Reveal';
+import { hasWhatsApp, socialHref, whatsappDisplay } from '../../lib/whatsapp';
 
-const hrefFor = (icon) => socials.find((s) => s.icon === icon)?.href || undefined;
+const hrefFor = (icon) => {
+  const social = socials.find((s) => s.icon === icon);
+  return (social && socialHref(social)) || undefined;
+};
 
 /** "Let’s stay in bloom." — social profile cards on blush. */
 export default function StayInBloom() {
@@ -18,10 +22,13 @@ export default function StayInBloom() {
           <p className="mx-auto mt-5 max-w-[620px] text-[15px] leading-6 md:mt-[25px]">{stayInBloom.body}</p>
         </Reveal>
 
-        <ul className="mt-8 grid gap-6 md:mt-[25px] md:grid-cols-3">
+        <ul className="mx-auto mt-8 grid max-w-[844px] gap-6 md:mt-[25px] md:grid-cols-2">
           {stayInBloom.items.map((item, i) => (
             <Reveal as="li" key={item.title} delay={i * 0.08}>
-              <InfoCard {...item} href={hrefFor(item.icon)} align="center" className="bg-cream px-6 pt-[26px] pb-6" />
+              <InfoCard
+                {...item}
+                value={item.icon === 'whatsapp' && hasWhatsApp ? whatsappDisplay : item.value}
+                href={hrefFor(item.icon)} align="center" className="bg-cream px-6 pt-[26px] pb-6" />
             </Reveal>
           ))}
         </ul>

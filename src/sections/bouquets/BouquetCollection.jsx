@@ -12,7 +12,7 @@ export default function BouquetCollection() {
   const count = String(items.length).padStart(2, '0');
 
   return (
-    <section aria-labelledby="bouquet-edit" className="container-page pt-12 pb-16 md:pt-16">
+    <section id="bouquet-collection" aria-labelledby="bouquet-edit" className="container-page pt-12 pb-16 md:pt-16">
       <div role="group" aria-label="Filter bouquets" className="flex flex-wrap gap-2.5 md:gap-3">
         {bouquetFilters.map((f) => (
           <FilterPill key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
@@ -33,6 +33,7 @@ export default function BouquetCollection() {
           {items.map((item) => (
             <motion.li
               key={item.id}
+              id={item.id}
               layout={!reduce}
               initial={reduce ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

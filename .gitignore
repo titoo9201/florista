@@ -1,2 +1,7 @@
 node_modules
 dist
+
+# local environment settings (EmailJS keys)
+.env
+.env.local
+.env.*.local

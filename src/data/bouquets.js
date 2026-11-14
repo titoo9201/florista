@@ -31,7 +31,7 @@ export const bouquetCollection = {
   editLabel: 'The bouquet edit',
   unit: { one: 'creation', other: 'creations' },
   note: 'Preview collection · Names, images and ₹[price] await owner details.',
-  cta: { label: 'Contact for Order', href: '#contact' },
+  cta: { label: 'Contact for Order', href: '#contact', whatsapp: 'order' },
   // NOTE: category tags are placeholders (the design doesn't specify them) — adjust freely.
   items: [
     {
@@ -88,5 +88,5 @@ export const bouquetCollection = {
 export const bouquetsCta = {
   title: 'Your colours. Your occasion. Your bouquet.',
   body: 'Tell us what you have in mind. Let’s dream up a handmade arrangement that feels just right.',
-  cta: { label: 'Enquire about a custom bouquet', href: '#contact' },
+  cta: { label: 'Enquire about a custom bouquet', href: '#contact', whatsapp: 'customBouquet' },
 };

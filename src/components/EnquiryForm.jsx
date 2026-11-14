@@ -4,11 +4,12 @@ import { enquiryForm as copy } from '../data/contact';
 import Button from './Button';
 import FormField from './FormField';
 import Heading from './Heading';
+import { sendEnquiry } from '../lib/sendEnquiry';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const empty = Object.fromEntries(copy.fields.map((f) => [f.name, '']));
 
-/** Returns { field: message } for every invalid field. Front-end only — nothing is submitted anywhere. */
+/** Returns { field: message } for every invalid field. */
 function validate(values) {
   const errors = {};
   if (values.name.trim().length < 2) errors.name = copy.errors.name;
@@ -23,18 +24,20 @@ export default function EnquiryForm() {
   const [values, setValues] = useState(empty);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false); // validate live after the first submit attempt
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | failed
   const formRef = useRef(null);
+  const honeypotRef = useRef(null);
 
   const onChange = (e) => {
     const next = { ...values, [e.target.name]: e.target.value };
     setValues(next);
-    setSent(false);
+    if (status === 'sent' || status === 'failed') setStatus('idle');
     if (submitted) setErrors(validate(next));
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
+    if (status === 'sending') return;
     const found = validate(values);
     setErrors(found);
     setSubmitted(true);
@@ -43,10 +46,26 @@ export default function EnquiryForm() {
       formRef.current?.querySelector(`[name="${firstInvalid.name}"]`)?.focus();
       return;
     }
-    setSent(true);
-    setValues(empty);
-    setSubmitted(false);
+
+    const done = () => {
+      setStatus('sent');
+      setValues(empty);
+      setSubmitted(false);
+    };
+    // Spam bots fill the hidden field — pretend success without sending anything.
+    if (honeypotRef.current?.value) return done();
+
+    setStatus('sending');
+    try {
+      await sendEnquiry(values);
+      done();
+    } catch (err) {
+      console.error('Enquiry could not be sent:', err);
+      setStatus('failed'); // keep what the customer typed so they can retry
+    }
   };
+
+  const sending = status === 'sending';
 
   return (
     <div className="rounded-card bg-card px-5 pt-7 pb-8 shadow-card sm:px-9 sm:pb-9">
@@ -55,7 +74,13 @@ export default function EnquiryForm() {
       </Heading>
       <p className="mt-4 text-sm leading-6 md:mt-[18px]">{copy.body}</p>
 
-      <form ref={formRef} noValidate onSubmit={onSubmit} aria-labelledby="enquiry-title" className="mt-6">
+      <form ref={formRef} noValidate onSubmit={onSubmit} aria-labelledby="enquiry-title" aria-busy={sending} className="mt-6">
+        {/* Honeypot: hidden from people and screen readers, tempting to bots */}
+        <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+          <label htmlFor="field-company">Company</label>
+          <input ref={honeypotRef} id="field-company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+        </div>
+
         <div className="grid gap-x-5 gap-y-[26px] sm:grid-cols-2">
           {copy.fields.map(({ full, ...field }) => (
             <FormField
@@ -70,20 +95,23 @@ export default function EnquiryForm() {
         </div>
 
         <p className="mt-6 text-[11px] leading-5">{copy.note}</p>
-        <Button type="submit" className="mt-6">
-          {copy.submit}
+        <Button type="submit" disabled={sending} className="mt-6 disabled:cursor-wait disabled:opacity-70">
+          {sending ? copy.sending : copy.submit}
         </Button>
 
         <div role="status" aria-live="polite">
           <AnimatePresence>
-            {sent && (
+            {(status === 'sent' || status === 'failed') && (
               <motion.p
+                key={status}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mt-4 rounded-btn bg-blush px-4 py-3 text-sm leading-6"
+                className={`mt-4 rounded-btn px-4 py-3 text-sm leading-6 ${
+                  status === 'sent' ? 'bg-blush' : 'border border-error/40 bg-white text-error'
+                }`}
               >
-                {copy.success}
+                {status === 'sent' ? copy.success : copy.failure}
               </motion.p>
             )}
           </AnimatePresence>

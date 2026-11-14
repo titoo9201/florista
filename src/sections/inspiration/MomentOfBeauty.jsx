@@ -2,6 +2,7 @@ import { momentOfBeautySection as data } from '../../data/inspiration';
 import Eyebrow from '../../components/Eyebrow';
 import Img from '../../components/Img';
 import Reveal from '../../components/Reveal';
+import SmartLink from '../../components/SmartLink';
 
 /** "A moment of beauty" — large italic quote beside a photograph. */
 export default function MomentOfBeauty() {
@@ -25,13 +26,15 @@ export default function MomentOfBeauty() {
         </Reveal>
 
         <Reveal delay={0.1} className="overflow-hidden rounded-media">
-          <Img
-            src={data.image.src}
-            alt={data.image.alt}
-            width={data.image.width}
-            height={data.image.height}
-            className="aspect-[542/340] h-auto w-full object-cover"
-          />
+          <SmartLink href={data.link} className="group block">
+            <Img
+              src={data.image.src}
+              alt={data.image.alt}
+              width={data.image.width}
+              height={data.image.height}
+              className="aspect-[542/340] h-auto w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            />
+          </SmartLink>
         </Reveal>
       </div>
     </section>

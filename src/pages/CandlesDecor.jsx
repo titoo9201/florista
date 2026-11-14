@@ -9,6 +9,7 @@ export default function CandlesDecor() {
       <PageHero id="candles-title" {...candlesHero} />
       <FilterableCollection
         id="candle-edit"
+        sectionId="candle-collection"
         filterLabel="Filter candles and decor"
         filters={candleFilters}
         collection={candleCollection}

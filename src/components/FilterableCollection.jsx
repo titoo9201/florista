@@ -8,14 +8,14 @@ import ProductCard from './ProductCard';
  * `filters[0]` should be the "show everything" option (id: 'all').
  * `collection`: { editLabel, unit: { one, other }, note, cta, items[] } — items carry `categories`.
  */
-export default function FilterableCollection({ id, filterLabel, filters, collection }) {
+export default function FilterableCollection({ id, sectionId, filterLabel, filters, collection }) {
   const [filter, setFilter] = useState('all');
   const reduce = useReducedMotion();
   const items = filter === 'all' ? collection.items : collection.items.filter((item) => item.categories.includes(filter));
   const count = String(items.length).padStart(2, '0');
 
   return (
-    <section aria-labelledby={id} className="container-page pt-12 pb-16 md:pt-16">
+    <section id={sectionId} aria-labelledby={id} className="container-page pt-12 pb-16 md:pt-16">
       <div role="group" aria-label={filterLabel} className="flex flex-wrap gap-2.5 md:gap-3">
         {filters.map((f) => (
           <FilterPill key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>
@@ -36,6 +36,7 @@ export default function FilterableCollection({ id, filterLabel, filters, collect
           {items.map((item) => (
             <motion.li
               key={item.id}
+              id={item.id}
               layout={!reduce}
               initial={reduce ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

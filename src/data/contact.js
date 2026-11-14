@@ -1,3 +1,5 @@
+import { business, instagram } from './site';
+
 // Contact page content. All copy is taken verbatim from the design ([bracketed] text = owner placeholders).
 
 export const contactHero = {
@@ -9,14 +11,13 @@ export const contactHero = {
 export const contactMethods = {
   title: 'Say hello.',
   body: 'Choose the way that feels easiest for you.',
-  note: 'Contact details are editable placeholders.',
+  note: '', // design had 'Contact details are editable placeholders.' — removed now that details are real
   // Add `href` (tel:, https://wa.me/…, mailto:, maps link, profile URL) and the card becomes a link.
   items: [
-    { title: 'Call us', value: '[+91 business phone number]' },
-    { title: 'WhatsApp', value: '[+91 WhatsApp number]' },
-    { title: 'Email us', value: '[Business email address]' },
-    { title: 'Find us', value: '[Business address, City, State, PIN]' },
-    { title: 'Instagram', value: '[@your_business_profile]' },
+    { title: 'WhatsApp', value: '[+91 WhatsApp number]', whatsapp: true }, // filled from site.js `whatsapp.number`
+    { title: 'Email us', value: business.email, href: `mailto:${business.email}` },
+    { title: 'Find us', value: business.location },
+    { title: 'Instagram', value: instagram.handle, href: instagram.url },
   ],
 };
 
@@ -33,8 +34,10 @@ export const enquiryForm = {
   note: 'Please share only the details needed for your enquiry.',
   submit: 'Send Enquiry',
   privacy: '[Add your privacy notice and enquiry handling details here.]',
-  // Front-end only: there is no backend yet, so nothing is sent anywhere.
+  // Sent via EmailJS (see src/lib/sendEnquiry.js and .env.local).
+  sending: 'Sending…',
   success: 'Thank you! We’ll be in touch soon.',
+  failure: 'Sorry, your enquiry couldn’t be sent. Please try again in a moment.',
   errors: {
     name: 'Please enter your name.',
     email: 'Please enter a valid email address.',
@@ -48,8 +51,7 @@ export const stayInBloom = {
   body: 'For floral inspiration, handmade details and your next thoughtful gift.',
   // Profile URLs come from `socials` in site.js once added.
   items: [
-    { icon: 'instagram', title: 'Instagram', value: '[Add Instagram profile link]' },
-    { icon: 'facebook', title: 'Facebook', value: '[Add Facebook profile link]' },
+    { icon: 'instagram', title: 'Instagram', value: instagram.handle },
     { icon: 'whatsapp', title: 'WhatsApp', value: '[Add WhatsApp profile link]' },
   ],
 };

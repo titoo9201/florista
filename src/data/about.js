@@ -56,9 +56,9 @@ export const aboutGallery = {
   title: 'A little glimpse of our world.',
   body: 'Illustrative images, ready for your own brand photographs.',
   items: [
-    { caption: 'Petals & possibilities', image: { src: petals, alt: 'Peach and ivory handmade roses in a speckled vase beside a window.', width: 514, height: 476 } },
-    { caption: 'Little moments of warmth', image: { src: warmth, alt: 'A cream peony candle on travertine stone with scattered rose petals.', width: 513, height: 476 } },
-    { caption: 'Thoughtful things to give', image: { src: giving, alt: 'An open gift box with a flower candle, a small ribboned bouquet and a ceramic dish.', width: 513, height: 476 } },
+    { caption: 'Petals & possibilities', link: '/bouquets#ivory-garden-bouquet', image: { src: petals, alt: 'Peach and ivory handmade roses in a speckled vase beside a window.', width: 514, height: 476 } },
+    { caption: 'Little moments of warmth', link: '/candles-decor#the-peony-candle', image: { src: warmth, alt: 'A cream peony candle on travertine stone with scattered rose petals.', width: 513, height: 476 } },
+    { caption: 'Thoughtful things to give', link: '/candles-decor#the-thoughtful-gift-edit', image: { src: giving, alt: 'An open gift box with a flower candle, a small ribboned bouquet and a ceramic dish.', width: 513, height: 476 } },
   ],
 };
 

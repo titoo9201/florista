@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { brand, contact, footer, navLinks, socials } from '../data/site';
+import { brand, contact, developer, footer, navLinks, socials } from '../data/site';
 import Logo from './Logo';
 import SmartLink from './SmartLink';
 import SocialIcon from './icons/SocialIcon';
+import { socialHref } from '../lib/whatsapp';
 
 /** Renders a link when `href` is set, plain text otherwise (for design placeholders). */
 function MaybeLink({ href, className = '', children }) {
@@ -32,7 +33,7 @@ export default function Footer() {
             <ul className="mt-[10px] flex flex-wrap items-center gap-x-[22px] gap-y-3 text-xs leading-5" aria-label="Social media">
               {socials.map((s) => (
                 <li key={s.label}>
-                  <MaybeLink href={s.href} className="inline-flex items-center gap-[2px]">
+                  <MaybeLink href={socialHref(s)} className="inline-flex items-center gap-[2px]">
                     <SocialIcon name={s.icon} size={16} />
                     {s.label}
                   </MaybeLink>
@@ -68,8 +69,29 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-[34px] border-t border-line pt-8">
+        <div className="mt-[34px] flex flex-col gap-3 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[11px] leading-4">{footer.copyright}</p>
+
+          {/* Developer credit */}
+          <div className="flex items-center gap-2 text-[11px] leading-4 text-ink/80">
+            <span>
+              {developer.label} <span className="font-medium text-ink">{developer.name}</span>
+            </span>
+            <ul className="flex items-center" aria-label={`Contact ${developer.name}, the developer`}>
+              {developer.links.map((l) => (
+                <li key={l.label}>
+                  <SmartLink
+                    href={l.href}
+                    title={`${l.label} — ${developer.name}`}
+                    aria-label={`${developer.name} on ${l.label}`}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-cream hover:text-ink"
+                  >
+                    <SocialIcon name={l.icon} size={14} />
+                  </SmartLink>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </footer>

@@ -37,10 +37,11 @@ export const collection = {
   title: 'From our hands to your heart.',
   body: 'A preview of flowers, candlelight and thoughtful gifting.',
   note: 'Collection preview · Product names, prices and images are editable samples.',
-  cta: { label: 'Contact for Order', href: '#contact' },
+  cta: { label: 'Contact for Order', href: '#contact', whatsapp: 'order' },
   products: [
     {
       id: 'blush-paper-roses',
+      link: '/bouquets#blush-paper-roses',
       name: 'Blush paper roses',
       description: 'Soft rose petals, carefully made by hand.',
       price: '₹[price]',
@@ -48,6 +49,7 @@ export const collection = {
     },
     {
       id: 'peony-candle',
+      link: '/candles-decor#the-peony-candle',
       name: 'Peony candle',
       description: 'A sculptural bloom for a quiet corner.',
       price: '₹[price]',
@@ -55,6 +57,7 @@ export const collection = {
     },
     {
       id: 'your-kind-of-bouquet',
+      link: '/bouquets#pastel-meadow-bouquet',
       name: 'Your kind of bouquet',
       description: 'A personal palette for a special moment.',
       price: '₹[price]',
@@ -67,7 +70,7 @@ export const customOrder = {
   eyebrow: 'Your colours. Your story.',
   title: ['Something beautiful,', 'just for you.'],
   body: 'A favourite shade, a heartfelt note, a special occasion. Let’s bring your idea to life with a handmade creation.',
-  cta: { label: 'Let’s create together', href: '#contact' },
+  cta: { label: 'Let’s create together', href: '#contact', whatsapp: 'custom' },
   image: {
     src: somethingBeautiful,
     alt: 'Peach and ivory handmade roses in a speckled ceramic vase with a linen bow, beside a sunlit window.',

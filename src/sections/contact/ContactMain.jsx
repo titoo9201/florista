@@ -3,6 +3,11 @@ import EnquiryForm from '../../components/EnquiryForm';
 import Heading from '../../components/Heading';
 import InfoCard from '../../components/InfoCard';
 import Reveal from '../../components/Reveal';
+import { hasWhatsApp, whatsappDisplay, whatsappLink } from '../../lib/whatsapp';
+
+// The WhatsApp card shows the real number and opens a chat once a number is set in site.js.
+const withWhatsApp = ({ whatsapp, ...item }) =>
+  whatsapp && hasWhatsApp ? { ...item, value: whatsappDisplay, href: whatsappLink('general') } : item;
 
 /** "Say hello." contact methods beside the enquiry form. */
 export default function ContactMain() {
@@ -20,11 +25,11 @@ export default function ContactMain() {
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:mt-[22px] lg:grid-cols-1">
             {contactMethods.items.map((item) => (
               <li key={item.title}>
-                <InfoCard {...item} className="bg-card px-6 pt-[22px] pb-6" />
+                <InfoCard {...withWhatsApp(item)} className="bg-card px-6 pt-[22px] pb-6" />
               </li>
             ))}
           </ul>
-          <p className="mt-5 text-[11px] leading-5 lg:mt-[22px]">{contactMethods.note}</p>
+          {contactMethods.note && <p className="mt-5 text-[11px] leading-5 lg:mt-[22px]">{contactMethods.note}</p>}
         </Reveal>
 
         <Reveal delay={0.1}>

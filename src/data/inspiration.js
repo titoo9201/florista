@@ -14,6 +14,7 @@ export const inspirationHero = {
 };
 
 export const momentOfBeautySection = {
+  link: '/bouquets#bouquet-collection',
   eyebrow: 'A moment of beauty',
   quote: ['“Where flowers bloom,', 'little joys follow.”'],
   body: 'A little reminder to make room for beautiful things.',
@@ -37,6 +38,7 @@ export const moodboard = {
   items: [
     {
       number: '01',
+      link: '/bouquets#blush-paper-roses',
       title: 'Blush & ivory',
       column: 1,
       tall: true,
@@ -44,18 +46,21 @@ export const moodboard = {
     },
     {
       number: '02',
+      link: '/bouquets#bouquet-collection',
       title: 'Petals, patiently made',
       column: 2,
       image: { src: petalsPatientlyMade, alt: 'Hands shaping a pale pink paper petal at a workbench beside finished roses.', width: 513, height: 277, position: 'bottom' },
     },
     {
       number: '03',
+      link: '/bouquets#ivory-garden-bouquet',
       title: 'Soft garden shades',
       column: 3,
       image: { src: softGardenShades, alt: 'Peach and ivory handmade roses in a speckled vase beside a window.', width: 683, height: 500, position: 'center' },
     },
     {
       number: '04',
+      link: '/bouquets#pastel-meadow-bouquet',
       title: 'A ribbon-tied feeling',
       column: 1,
       tall: true,
@@ -63,6 +68,7 @@ export const moodboard = {
     },
     {
       number: '05',
+      link: '/bouquets#bouquet-collection',
       title: 'An armful of beautiful',
       column: 2,
       tall: true,
@@ -70,6 +76,7 @@ export const moodboard = {
     },
     {
       number: '06',
+      link: '/bouquets#your-signature-bouquet',
       title: 'Every petal, a possibility',
       column: 3,
       image: { src: everyPetal, alt: 'A bouquet of blush and peach roses wrapped in cream paper and tied with a pink ribbon.', width: 513, height: 425, position: 'center' },
