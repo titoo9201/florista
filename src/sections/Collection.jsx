@@ -3,9 +3,12 @@ import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import ProductCard from '../components/ProductCard';
 import Reveal from '../components/Reveal';
+import { useContent } from '../context/ContentContext';
 
 /** "From our hands to your heart." — product preview grid. */
 export default function Collection() {
+  const { getProducts } = useContent();
+  const products = getProducts('home', collection.products);
   return (
     <section id={collection.id} aria-labelledby="collection-title" className="container-page pt-16 pb-16 md:pt-[78px] md:pb-20">
       <Reveal>
@@ -20,7 +23,7 @@ export default function Collection() {
       </Reveal>
 
       <ul className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {collection.products.map((product, i) => (
+        {products.map((product, i) => (
           <Reveal as="li" key={product.id} delay={i * 0.08}>
             <ProductCard {...product} cta={collection.cta} />
           </Reveal>

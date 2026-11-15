@@ -2,8 +2,11 @@ import { candleCollection, candleFilters, candlesCta, candlesHero } from '../dat
 import PageHero from '../components/PageHero';
 import FilterableCollection from '../components/FilterableCollection';
 import CtaBanner from '../components/CtaBanner';
+import { useContent } from '../context/ContentContext';
 
 export default function CandlesDecor() {
+  const { getProducts } = useContent();
+  const products = getProducts('candles', candleCollection.items);
   return (
     <>
       <PageHero id="candles-title" {...candlesHero} />
@@ -12,7 +15,7 @@ export default function CandlesDecor() {
         sectionId="candle-collection"
         filterLabel="Filter candles and decor"
         filters={candleFilters}
-        collection={candleCollection}
+        collection={{ ...candleCollection, items: products }}
       />
       <CtaBanner
         id="candles-cta-title"

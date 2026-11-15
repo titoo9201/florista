@@ -5,8 +5,11 @@ import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import Img from '../components/Img';
 import Reveal from '../components/Reveal';
+import { useContent } from '../context/ContentContext';
 
 export default function Hero() {
+  const { getImage } = useContent();
+  const image = getImage('home.hero', hero.image);
   const reduce = useReducedMotion();
 
   return (
@@ -38,10 +41,10 @@ export default function Hero() {
         >
           <Img
             priority
-            src={hero.image.src}
-            alt={hero.image.alt}
-            width={hero.image.width}
-            height={hero.image.height}
+            src={image.src}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
             className="h-full w-full object-cover object-top"
           />
         </motion.div>

@@ -5,7 +5,7 @@ import seasideGlow from '../assets/images/candles/seaside-glow.webp';
 import ceramicJar from '../assets/images/candles/ceramic-jar-candle.webp';
 import giftEdit from '../assets/images/candles/thoughtful-gift-edit.webp';
 // Same photograph as the Home page "Peony candle" card.
-import peonyCandle from '../assets/images/peony-candle.webp';
+import peonyCandle from '../assets/images/rose-candle.webp';
 
 export const candlesHero = {
   eyebrow: 'A little warmth. A little wonder.',
@@ -42,7 +42,7 @@ export const candleCollection = {
       description: 'A sculptural flower for your favourite corner.',
       price: '₹[price]',
       categories: ['decorative-candles', 'floral-candles'],
-      image: { src: peonyCandle, alt: 'A cream peony-shaped candle on travertine stone with scattered dried rose petals.', width: 510, height: 401 },
+      image: { src: peonyCandle, alt: 'A handmade deep red rose-shaped candle resting on a soft white rug.', width: 736, height: 574 },
     },
     {
       id: 'botanical-candle-duo',

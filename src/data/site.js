@@ -70,6 +70,6 @@ export const developer = {
   links: [
     { label: 'Email', icon: 'mail', href: 'mailto:titoos675@gmail.com' },
     { label: 'GitHub', icon: 'github', href: 'https://github.com/titoo9201' },
-    { label: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/titoo9201/' },
+    { label: 'Instagram', icon: 'instagram', href: 'https://www.instagram.com/titoo_9201/' },
   ],
 };
