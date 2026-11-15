@@ -10,7 +10,7 @@ import { ctaHref } from '../lib/whatsapp';
 export default function CustomOrder() {
   return (
     <section aria-labelledby="custom-title" className="bg-blush">
-      <div className="container-page grid items-start gap-10 py-16 md:grid-cols-[minmax(0,547fr)_minmax(0,669fr)] md:gap-12 md:py-[72px] xl:gap-16">
+      <div className="container-page grid items-start gap-8 py-12 md:grid-cols-[minmax(0,547fr)_minmax(0,669fr)] md:gap-12 md:py-[72px] xl:gap-16">
         <Reveal className="overflow-hidden rounded-media">
           <Img
             src={customOrder.image.src}
@@ -26,10 +26,10 @@ export default function CustomOrder() {
           <Heading
             id="custom-title"
             lines={customOrder.title}
-            className="mt-5 text-[40px] leading-[1.07] md:text-[48px] xl:text-[58px] xl:leading-[64px]"
+            className="mt-5 text-[clamp(2.25rem,10vw,3rem)] leading-[1.07] md:text-[48px] xl:text-[58px] xl:leading-[64px]"
           />
           <p className="mt-5 max-w-[610px] text-sm leading-6">{customOrder.body}</p>
-          <Button href={ctaHref(customOrder.cta)} className="mt-[22px]">
+          <Button href={ctaHref(customOrder.cta)} className="mt-[22px] w-full sm:w-auto">
             {customOrder.cta.label}
           </Button>
         </Reveal>

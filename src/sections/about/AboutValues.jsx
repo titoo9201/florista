@@ -13,7 +13,7 @@ export default function AboutValues() {
           <Eyebrow>{aboutValues.eyebrow}</Eyebrow>
           <Heading
             id="values-title"
-            className="mt-4 text-[38px] leading-[1.08] md:mt-[11px] md:text-[48px] xl:text-[52px] xl:leading-[58px]"
+            className="mt-4 text-[clamp(2.25rem,9vw,3rem)] leading-[1.08] md:mt-[11px] md:text-[48px] xl:text-[52px] xl:leading-[58px]"
           >
             {aboutValues.title}
           </Heading>

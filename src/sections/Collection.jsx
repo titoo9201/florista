@@ -22,7 +22,7 @@ export default function Collection() {
         <p className="mt-4 text-sm leading-6 md:mt-[14px]">{collection.body}</p>
       </Reveal>
 
-      <ul className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {products.map((product, i) => (
           <Reveal as="li" key={product.id} delay={i * 0.08}>
             <ProductCard {...product} cta={collection.cta} />
@@ -30,7 +30,7 @@ export default function Collection() {
         ))}
       </ul>
 
-      <p className="mt-8 text-[11px] leading-4">{collection.note}</p>
+      <p className="mt-8 text-xs leading-5 sm:text-[11px] sm:leading-4">{collection.note}</p>
     </section>
   );
 }

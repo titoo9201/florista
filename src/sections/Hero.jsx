@@ -21,13 +21,13 @@ export default function Hero() {
             as="h1"
             id="hero-title"
             lines={hero.title}
-            className="mt-5 text-[52px] leading-[1.02] sm:text-[64px] md:mt-7 md:text-[76px] md:leading-[1.05] xl:text-[88px] xl:leading-[96px]"
+            className="mt-5 text-[clamp(2.75rem,14vw,4rem)] leading-[1.02] sm:text-[64px] md:mt-7 md:text-[76px] md:leading-[1.05] xl:text-[88px] xl:leading-[96px]"
           />
           <p className="mt-5 font-serif text-[24px] leading-[1.2] italic md:mt-6 md:text-[28px]">{hero.tagline}</p>
           <p className="mt-5 max-w-[560px] text-sm leading-6 md:mt-6">{hero.body}</p>
           <div className="mt-8 flex flex-wrap gap-3 md:mt-[30px]">
-            <Button href={hero.primaryCta.href}>{hero.primaryCta.label}</Button>
-            <Button variant="outline" href={hero.secondaryCta.href}>
+            <Button href={hero.primaryCta.href} className="w-full sm:w-auto">{hero.primaryCta.label}</Button>
+            <Button variant="outline" href={hero.secondaryCta.href} className="w-full sm:w-auto">
               {hero.secondaryCta.label}
             </Button>
           </div>

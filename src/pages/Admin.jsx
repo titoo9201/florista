@@ -29,7 +29,7 @@ function readImage(file) {
 }
 
 function ProductEditor({ product, token, onSaved, onDeleted }) {
-  const [form, setForm] = useState(product);
+  const [form, setForm] = useState(() => ({ ...product, price: product.price?.includes('[price]') ? '' : product.price }));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const seedImage = getSeedProducts().find((item) => item.id === product.id)?.image;
@@ -99,9 +99,9 @@ function ProductEditor({ product, token, onSaved, onDeleted }) {
 
   return (
     <article className="rounded-card border border-line bg-card p-4 shadow-card">
-      <div className="flex gap-4">
-        <div className="w-40 shrink-0">
-          <div className="flex h-40 items-center justify-center overflow-hidden rounded-media border border-line bg-cream p-2">
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="w-full shrink-0 sm:w-40">
+          <div className="flex h-48 items-center justify-center overflow-hidden rounded-media border border-line bg-cream p-2 sm:h-40">
             {form.image?.src ? (
               <img
                 src={form.image.src}
@@ -132,11 +132,11 @@ function ProductEditor({ product, token, onSaved, onDeleted }) {
           </div>
           <label className="mt-3 block text-xs">Description<textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="admin-input" rows="2" /></label>
           <label className="mt-3 block text-xs">Image alt text<input value={form.image?.alt || ''} onChange={(e) => update('image', { ...form.image, alt: e.target.value })} className="admin-input" /></label>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <label className="admin-secondary cursor-pointer">Replace image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => upload(e.target.files[0])} /></label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(form.hidden)} onChange={(e) => update('hidden', e.target.checked)} /> Hide from website</label>
-            <button type="button" className="admin-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
-            <button type="button" className="text-sm text-error underline" disabled={busy} onClick={remove}>Delete</button>
+          <div className="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <label className="admin-secondary cursor-pointer text-center">Replace image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => upload(e.target.files[0])} /></label>
+            <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(form.hidden)} onChange={(e) => update('hidden', e.target.checked)} /> Hide from website</label>
+            <button type="button" className="admin-primary w-full sm:w-auto" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
+            <button type="button" className="min-h-11 text-left text-sm text-error underline sm:ml-2" disabled={busy} onClick={remove}>Delete</button>
             {message && <span className="text-xs">{message}</span>}
           </div>
           <p className="mt-2 text-xs text-ink/70">{IMAGE_HELP}</p>
@@ -167,7 +167,7 @@ function NewProduct({ collection, token, onCreated }) {
         <input className="admin-input" placeholder="Price (e.g. ₹1200)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
         <input className="admin-input" placeholder="Short description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
       </div>
-      <div className="mt-3 flex gap-3"><button type="button" className="admin-primary" onClick={create}>Add item</button>{message && <span className="self-center text-xs">{message}</span>}</div>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row"><button type="button" className="admin-primary w-full sm:w-auto" onClick={create}>Add item</button>{message && <span className="self-center text-xs">{message}</span>}</div>
     </div>
   );
 }
@@ -265,7 +265,7 @@ export default function Admin() {
     } catch (err) { setError(err.message); }
   }
 
-  if (!token) return <main className="container-page flex min-h-screen items-center justify-center py-12"><form onSubmit={login} className="w-full max-w-sm rounded-card bg-card p-8 shadow-card"><Link to="/" className="text-sm underline">← Back to website</Link><h1 className="mt-6 font-serif text-4xl">Florista admin</h1><p className="mt-2 text-sm">Enter your private passkey to manage products and photos.</p><input autoFocus type="password" inputMode="numeric" className="admin-input mt-6 w-full" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="Passkey" /><button className="admin-primary mt-4 w-full" type="submit">Open admin panel</button>{error && <p className="mt-3 text-sm text-error">{error}</p>}</form></main>;
+  if (!token) return <main className="container-page flex min-h-screen items-center justify-center py-8 sm:py-12"><form onSubmit={login} className="w-full max-w-sm rounded-card bg-card p-5 shadow-card sm:p-8"><Link to="/" className="text-sm underline">← Back to website</Link><h1 className="mt-6 font-serif text-4xl">Florista admin</h1><p className="mt-2 text-sm">Enter your private passkey to manage products and photos.</p><input autoFocus type="password" inputMode="numeric" className="admin-input mt-6 w-full" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="Passkey" /><button className="admin-primary mt-4 w-full" type="submit">Open admin panel</button>{error && <p className="mt-3 text-sm text-error">{error}</p>}</form></main>;
 
-  return <main className="container-page min-h-screen py-8 md:py-12"><div className="flex flex-wrap items-center justify-between gap-4"><div><Link to="/" className="text-sm underline">← View website</Link><h1 className="mt-3 font-serif text-5xl">Admin panel</h1><p className="mt-2 text-sm">Manage prices, images, visibility and new items.</p></div><button type="button" className="admin-secondary" onClick={() => { localStorage.removeItem('florista_admin_token'); setToken(''); }}>Log out</button></div>{content && !content.seeded && <div className="mt-8 rounded-card border border-rose bg-blush p-5"><h2 className="font-serif text-2xl">Import current website items</h2><p className="mt-1 text-sm">This one-time step copies the existing products into MongoDB so you can edit them.</p><button className="admin-primary mt-4" onClick={seed}>Import products</button></div>}<div className="mt-8 flex flex-wrap gap-2">{tabs.map(([id, label]) => <button key={id} type="button" onClick={() => setTab(id)} className={`admin-tab ${tab === id ? 'admin-tab-active' : ''}`}>{label}</button>)}</div><div className="mt-5 grid gap-4">{currentProducts.map((product) => <ProductEditor key={product.id} product={product} token={token} onSaved={(saved) => setProducts((all) => all.map((p) => p.id === saved.id ? saved : p))} onDeleted={(id) => setProducts((all) => all.filter((p) => p.id !== id))} />)}<NewProduct collection={tab} token={token} onCreated={(created) => setProducts((all) => [...all, created])} /></div><section className="mt-12"><h2 className="font-serif text-3xl">Page photos</h2><p className="mt-1 text-sm">Replace the main photos without changing code.</p><div className="mt-4 grid gap-4">{imageSlots.map(([slot]) => <ImageSlot key={slot} slot={slot} token={token} current={images[slot]} onSaved={(key, image) => setImages((all) => ({ ...all, [key]: image }))} />)}</div></section></main>;
+  return <main className="container-page min-h-screen py-8 md:py-12"><div className="flex flex-wrap items-center justify-between gap-4"><div><Link to="/" className="text-sm underline">← View website</Link><h1 className="mt-3 font-serif text-4xl sm:text-5xl">Admin panel</h1><p className="mt-2 text-sm">Manage prices, images, visibility and new items.</p></div><button type="button" className="admin-secondary" onClick={() => { localStorage.removeItem('florista_admin_token'); setToken(''); }}>Log out</button></div>{content && !content.seeded && <div className="mt-8 rounded-card border border-rose bg-blush p-5"><h2 className="font-serif text-2xl">Import current website items</h2><p className="mt-1 text-sm">This one-time step copies the existing products into MongoDB so you can edit them.</p><button className="admin-primary mt-4 w-full sm:w-auto" onClick={seed}>Import products</button></div>}<div className="mt-8 flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-2">{tabs.map(([id, label]) => <button key={id} type="button" onClick={() => setTab(id)} className={`admin-tab shrink-0 ${tab === id ? 'admin-tab-active' : ''}`}>{label}</button>)}</div><div className="mt-5 grid gap-4">{currentProducts.map((product) => <ProductEditor key={product.id} product={product} token={token} onSaved={(saved) => setProducts((all) => all.map((p) => p.id === saved.id ? saved : p))} onDeleted={(id) => setProducts((all) => all.filter((p) => p.id !== id))} />)}<NewProduct collection={tab} token={token} onCreated={(created) => setProducts((all) => [...all, created])} /></div><section className="mt-12"><h2 className="font-serif text-3xl">Page photos</h2><p className="mt-1 text-sm">Replace the main photos without changing code.</p><div className="mt-4 grid gap-4">{imageSlots.map(([slot]) => <ImageSlot key={slot} slot={slot} token={token} current={images[slot]} onSaved={(key, image) => setImages((all) => ({ ...all, [key]: image }))} />)}</div></section></main>;
 }

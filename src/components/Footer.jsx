@@ -84,7 +84,7 @@ export default function Footer() {
                     href={l.href}
                     title={`${l.label} — ${developer.name}`}
                     aria-label={`${developer.name} on ${l.label}`}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-cream hover:text-ink"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-cream hover:text-ink md:h-7 md:w-7"
                   >
                     <SocialIcon name={l.icon} size={14} />
                   </SmartLink>

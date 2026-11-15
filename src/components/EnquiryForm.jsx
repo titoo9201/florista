@@ -95,7 +95,7 @@ export default function EnquiryForm() {
         </div>
 
         <p className="mt-6 text-[11px] leading-5">{copy.note}</p>
-        <Button type="submit" disabled={sending} className="mt-6 disabled:cursor-wait disabled:opacity-70">
+        <Button type="submit" disabled={sending} className="mt-6 w-full sm:w-auto disabled:cursor-wait disabled:opacity-70">
           {sending ? copy.sending : copy.submit}
         </Button>
 

@@ -13,7 +13,7 @@ export default function AboutHero() {
         <Heading
           as="h1"
           id="about-title"
-          className="mt-4 text-[60px] leading-none sm:text-[72px] md:mt-[22px] md:text-[80px] xl:text-[88px] xl:leading-[96px]"
+          className="mt-4 text-[clamp(2.75rem,14vw,4.5rem)] leading-none sm:text-[72px] md:mt-[22px] md:text-[80px] xl:text-[88px] xl:leading-[96px]"
         >
           {aboutHero.title}
         </Heading>

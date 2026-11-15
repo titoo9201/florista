@@ -37,6 +37,11 @@
   }
   body {
     @apply bg-cream font-sans text-ink antialiased;
+    overflow-x: clip;
+  }
+  img {
+    display: block;
+    max-width: 100%;
   }
   :focus-visible {
     outline: 2px solid var(--color-ink);
@@ -54,6 +59,22 @@
   padding-inline: 1rem;
   @media (width >= 48rem) {
     padding-inline: 2rem;
+  }
+
+  @media (width < 64rem) {
+    .container-page {
+      padding-inline: 1rem;
+    }
+
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+
+    button {
+      min-height: 44px;
+    }
   }
   @media (width >= 80rem) {
     padding-inline: 5rem;
@@ -84,6 +105,7 @@
     background: var(--color-cream);
     padding: 0.55rem 0.7rem;
     color: var(--color-ink);
+    font-size: 16px;
   }
   .admin-input:focus {
     outline: 2px solid var(--color-rose);
@@ -96,6 +118,13 @@
     padding: 0.6rem 0.9rem;
     font-size: 0.8rem;
     line-height: 1.2;
+  }
+  @media (width < 48rem) {
+    .admin-primary,
+    .admin-secondary,
+    .admin-tab {
+      min-height: 44px;
+    }
   }
   .admin-primary {
     background: var(--color-ink);

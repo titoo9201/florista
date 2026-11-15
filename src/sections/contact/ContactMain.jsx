@@ -17,7 +17,7 @@ export default function ContactMain() {
         <Reveal>
           <Heading
             id="say-hello-title"
-            className="text-[36px] leading-[1.1] md:text-[40px] lg:-mt-1 xl:text-[42px] xl:leading-[50px]"
+            className="text-[clamp(2.25rem,9vw,2.75rem)] leading-[1.1] md:text-[40px] lg:-mt-1 xl:text-[42px] xl:leading-[50px]"
           >
             {contactMethods.title}
           </Heading>

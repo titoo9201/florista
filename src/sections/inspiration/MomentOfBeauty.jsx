@@ -14,7 +14,7 @@ export default function MomentOfBeauty() {
             {data.eyebrow}
           </Eyebrow>
           <blockquote className="mt-6 md:mt-[25px]">
-            <p className="font-serif text-[40px] leading-[1.1] italic sm:text-[56px] xl:text-[64px] xl:leading-[68px]">
+            <p className="font-serif text-[clamp(2.25rem,10vw,3.5rem)] leading-[1.1] italic sm:text-[56px] xl:text-[64px] xl:leading-[68px]">
               {data.quote.map((line) => (
                 <span key={line} className="block">
                   {line}

@@ -12,7 +12,7 @@ export default function CtaBanner({ id, title, body, cta, headingClassName = '',
           {title}
         </Heading>
         <p className="mx-auto mt-5 max-w-[680px] text-[15px] leading-6 md:mt-[22px]">{body}</p>
-        <Button href={ctaHref(cta)} className="mt-6 md:mt-[25px]">
+        <Button href={ctaHref(cta)} className="mt-6 w-full sm:w-auto md:mt-[25px]">
           {cta.label}
         </Button>
       </Reveal>

@@ -31,7 +31,7 @@ export default function FilterableCollection({ id, sectionId, filterLabel, filte
         <p className="text-[11px] leading-4">{collection.note}</p>
       </div>
 
-      <motion.ul layout={!reduce} className="mt-8 grid gap-x-6 gap-y-8 md:mt-[34px] md:grid-cols-2 lg:grid-cols-3">
+      <motion.ul layout={!reduce} className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-8 md:mt-[34px] lg:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
           {items.map((item) => (
             <motion.li
