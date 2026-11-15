@@ -50,6 +50,17 @@
   [id] {
     scroll-margin-top: 1.5rem;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @utility container-page {
@@ -106,6 +117,7 @@
     padding: 0.55rem 0.7rem;
     color: var(--color-ink);
     font-size: 16px;
+    min-height: 44px;
   }
   .admin-input:focus {
     outline: 2px solid var(--color-rose);
@@ -142,5 +154,73 @@
     border-color: var(--color-ink);
     background: var(--color-ink);
     color: var(--color-cream);
+  }
+
+}
+
+@layer utilities {
+  @media (width < 64rem) {
+    .text-xs,
+    .text-sm,
+    [class*="text-[10px]"],
+    [class*="text-[11px]"],
+    [class*="text-[12px]"],
+    [class*="text-[13px]"],
+    [class*="text-[14px]"],
+    [class*="text-[15px]"] {
+      font-size: 1rem !important;
+    }
+
+    button,
+    input:not([type='hidden']),
+    select,
+    textarea {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+      min-width: 44px;
+    }
+
+    a:not(.sr-only):not(.block):not(.inline-flex):not([class*='h-']) {
+      display: inline-flex;
+      min-width: 44px;
+      min-height: 44px;
+      align-items: center;
+      touch-action: manipulation;
+    }
+
+    a.inline-flex:not([class*='h-']) {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    footer a.inline-flex {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    h3 > a {
+      display: inline-flex;
+      min-width: 44px;
+      min-height: 44px;
+      align-items: center;
+      touch-action: manipulation;
+    }
+
+    .admin-primary,
+    .admin-secondary,
+    .admin-tab {
+      font-size: 1rem;
+    }
+
+    button:active,
+    [role='button']:active,
+    a.inline-flex:active,
+    a:not(.sr-only):active {
+      transform: translateY(1px);
+    }
   }
 }
