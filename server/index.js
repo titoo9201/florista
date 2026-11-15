@@ -84,6 +84,11 @@ async function deleteUpload(src) {
   if (m) await uploads.deleteOne({ _id: new ObjectId(m[1]) });
 }
 
+async function deleteUploads(sources) {
+  const uniqueSources = [...new Set(sources.filter(Boolean))];
+  await Promise.all(uniqueSources.map(deleteUpload));
+}
+
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 // ---------- app ----------
@@ -213,14 +218,17 @@ app.put(
     const before = await products.findOne({ _id: req.params.id });
     if (!before) return res.status(404).json({ error: 'Not found' });
     const update = { $set: { ...fields, updatedAt: new Date() } };
-    if (fields.image && before.image?.src !== fields.image.src) {
-      update.$push = { imageHistory: { $each: [before.image], $slice: -10 } };
-    }
+    const replacingImage = fields.image && before.image?.src !== fields.image.src;
+    const previousImageSources = replacingImage
+      ? [before.image?.src, ...(before.imageHistory || []).map((image) => image.src)]
+      : [];
+    if (replacingImage) update.$unset = { imageHistory: '' };
     const after = await products.findOneAndUpdate(
       { _id: req.params.id },
       update,
       { returnDocument: 'after' },
     );
+    if (replacingImage) await deleteUploads(previousImageSources);
     res.json(toApi(after));
   }),
 );
@@ -230,7 +238,11 @@ app.delete(
   wrap(async (req, res) => {
     const doc = await products.findOneAndDelete({ _id: req.params.id });
     if (!doc) return res.status(404).json({ error: 'Not found' });
-    await deleteUpload(doc.image?.src);
+    await deleteUploads([
+      doc.image?.src,
+      doc.originalImage?.src,
+      ...(doc.imageHistory || []).map((image) => image.src),
+    ]);
     res.json({ ok: true });
   }),
 );
@@ -276,10 +288,13 @@ app.put(
     if (!image) return res.status(400).json({ error: 'Image is required' });
     const before = await siteImages.findOne({ _id: req.params.key });
     const update = { $set: { ...image, updatedAt: new Date() } };
-    if (before && before.src !== image.src) {
-      update.$push = { previousImages: { $each: [{ src: before.src, alt: before.alt, width: before.width, height: before.height }], $slice: -10 } };
-    }
+    const replacingImage = before && before.src !== image.src;
+    const previousImageSources = replacingImage
+      ? [before.src, ...(before.previousImages || []).map((item) => item.src)]
+      : [];
+    if (replacingImage) update.$unset = { previousImages: '' };
     await siteImages.updateOne({ _id: req.params.key }, update, { upsert: true });
+    if (replacingImage) await deleteUploads(previousImageSources);
     res.json({ key: req.params.key, ...image });
   }),
 );
@@ -288,7 +303,7 @@ app.delete(
   '/api/admin/site-images/:key',
   wrap(async (req, res) => {
     const doc = await siteImages.findOneAndDelete({ _id: req.params.key });
-    if (doc) await deleteUpload(doc.src);
+    if (doc) await deleteUploads([doc.src, ...(doc.previousImages || []).map((image) => image.src)]);
     res.json({ ok: true });
   }),
 );

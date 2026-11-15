@@ -37,6 +37,7 @@ function ProductEditor({ product, token, onSaved, onDeleted }) {
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
   async function save() {
+    if (busy) return;
     setBusy(true);
     setMessage('');
     try {
@@ -98,7 +99,7 @@ function ProductEditor({ product, token, onSaved, onDeleted }) {
   }
 
   return (
-    <article className="rounded-card border border-line bg-card p-4 shadow-card">
+    <article aria-busy={busy} className="rounded-card border border-line bg-card p-4 shadow-card">
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="w-full shrink-0 sm:w-40">
           <div className="flex h-48 items-center justify-center overflow-hidden rounded-media border border-line bg-cream p-2 sm:h-40">
@@ -133,7 +134,7 @@ function ProductEditor({ product, token, onSaved, onDeleted }) {
           <label className="mt-3 block text-xs">Description<textarea value={form.description} onChange={(e) => update('description', e.target.value)} className="admin-input" rows="2" /></label>
           <label className="mt-3 block text-xs">Image alt text<input value={form.image?.alt || ''} onChange={(e) => update('image', { ...form.image, alt: e.target.value })} className="admin-input" /></label>
           <div className="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <label className="admin-secondary cursor-pointer text-center">Replace image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => upload(e.target.files[0])} /></label>
+            <label className={`admin-secondary cursor-pointer text-center ${busy ? 'pointer-events-none opacity-60' : ''}`}>Replace image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={(e) => upload(e.target.files[0])} /></label>
             <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(form.hidden)} onChange={(e) => update('hidden', e.target.checked)} /> Hide from website</label>
             <button type="button" className="admin-primary w-full sm:w-auto" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</button>
             <button type="button" className="min-h-11 text-left text-sm text-error underline sm:ml-2" disabled={busy} onClick={remove}>Delete</button>
@@ -174,6 +175,7 @@ function NewProduct({ collection, token, onCreated }) {
 
 function ImageSlot({ slot, token, current, onSaved }) {
   const [image, setImage] = useState(current || { src: '', alt: '' });
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const previousImage = image.previousImages?.[image.previousImages.length - 1];
   async function upload(file) {
@@ -182,19 +184,24 @@ function ImageSlot({ slot, token, current, onSaved }) {
       setMessage('This image is too large. Maximum allowed size is 3 MB (3,145,728 bytes).');
       return;
     }
+    setBusy(true);
     try {
       const dataUrl = await readImage(file);
       setImage({ ...image, src: dataUrl });
       const uploaded = await apiFetch('/api/admin/uploads', { method: 'POST', headers: { ...authHeaders(token), 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) });
       setImage((current) => ({ ...current, src: resolveAssetUrl(uploaded.src) }));
     } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
   }
   async function save() {
+    if (busy) return;
+    setBusy(true);
     try {
       const saved = await apiFetch(`/api/admin/site-images/${slot}`, { method: 'PUT', headers: authHeaders(token), body: JSON.stringify(image) });
       onSaved(slot, saved);
       setMessage('Saved');
     } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
   }
   function restore() {
     if (!previousImage) return;
@@ -202,7 +209,7 @@ function ImageSlot({ slot, token, current, onSaved }) {
     setMessage('Previous photo selected — click Save photo to restore it.');
   }
   return (
-    <div className="rounded-card border border-line bg-card p-4">
+    <div aria-busy={busy} className="rounded-card border border-line bg-card p-4">
       <h3 className="font-serif text-xl">{imageSlots.find(([key]) => key === slot)?.[1]}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-[220px_1fr]">
         <div className="flex h-48 items-center justify-center overflow-hidden rounded-media border border-line bg-cream p-2">
@@ -210,11 +217,11 @@ function ImageSlot({ slot, token, current, onSaved }) {
         </div>
         <div>
           <div className="flex flex-wrap gap-3">
-            <label className="admin-secondary cursor-pointer">Choose image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => upload(e.target.files[0])} /></label>
-            <button type="button" className="admin-secondary" disabled={!previousImage} onClick={restore}>Restore previous</button>
+            <label className={`admin-secondary cursor-pointer ${busy ? 'pointer-events-none opacity-60' : ''}`}>Choose image<input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={(e) => upload(e.target.files[0])} /></label>
+            <button type="button" className="admin-secondary" disabled={busy || !previousImage} onClick={restore}>Restore previous</button>
           </div>
           <input className="admin-input mt-3 w-full" placeholder="Image alt text" value={image.alt || ''} onChange={(e) => setImage({ ...image, alt: e.target.value })} />
-          <button type="button" className="admin-primary mt-3" onClick={save}>Save photo</button>
+          <button type="button" className="admin-primary mt-3" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save photo'}</button>
           <p className="mt-2 text-xs text-ink/70">{IMAGE_HELP}</p>
           {message && <p className="mt-2 text-xs">{message}</p>}
         </div>
