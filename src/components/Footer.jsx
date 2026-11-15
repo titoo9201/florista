@@ -69,6 +69,8 @@ export default function Footer() {
           </div>
         </div>
 
+        <p className="mt-10 text-center text-[11px] leading-4">{footer.owner}</p>
+
         <div className="mt-[34px] flex flex-col gap-3 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[11px] leading-4">{footer.copyright}</p>
 

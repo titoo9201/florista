@@ -60,6 +60,7 @@ export const socials = [
 
 export const footer = {
   exploreHeading: 'Explore',
+  owner: 'This shop is owned by deepanshiiiiii 🌸🌷',
   copyright: `© ${new Date().getFullYear()} Florista · Made with care.`,
 };
 
