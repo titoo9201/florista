@@ -1,4 +1,4 @@
-import { makerNote } from '../../data/about';
+import { useContent, useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import Img from '../../components/Img';
@@ -6,15 +6,18 @@ import Reveal from '../../components/Reveal';
 
 /** "A note from the maker" — arched photo beside the brand introduction. */
 export default function MakerNote() {
+  const makerNote = useSection('about.makerNote');
+  const { getImage } = useContent();
+  const image = getImage('about.maker', makerNote.image);
   return (
     <section aria-labelledby="maker-title" className="container-page py-16 md:py-20">
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,584px)_minmax(0,1fr)] lg:gap-16">
         <Reveal className="mx-auto w-full max-w-[584px] overflow-hidden rounded-t-[34%] rounded-b-media">
           <Img
-            src={makerNote.image.src}
-            alt={makerNote.image.alt}
-            width={makerNote.image.width}
-            height={makerNote.image.height}
+            src={image.src}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
             className="aspect-[584/561] h-auto w-full object-cover"
           />
         </Reveal>

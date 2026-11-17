@@ -29,13 +29,13 @@ export const contact = {
 };
 
 /**
- * WhatsApp ordering. The seller number comes from VITE_WHATSAPP_NUMBER in .env.local
- * (digits with country code, e.g. 919876543210). While it is empty, order buttons keep their
- * normal behaviour (scroll to "Say hello").
+ * WhatsApp ordering. The seller number is set in the admin panel (Contact & WhatsApp); until then the
+ * API sends the default from its WHATSAPP_NUMBER env var. Digits with country code, e.g. 919876543210.
+ * While there is no number, order buttons keep their normal behaviour (scroll to "Say hello").
  * Messages: {name} and {price} are filled in from the product the customer clicked.
  */
 export const whatsapp = {
-  number: import.meta.env.VITE_WHATSAPP_NUMBER ?? '',
+  number: '', // set in the admin panel (Contact & WhatsApp); default comes from the server's WHATSAPP_NUMBER
   messages: {
     general: 'Hi Florista! 🌸 I have a question about your handmade creations.',
     order:

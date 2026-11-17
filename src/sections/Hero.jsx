@@ -1,13 +1,13 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { hero } from '../data/home';
 import Button from '../components/Button';
 import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import Img from '../components/Img';
 import Reveal from '../components/Reveal';
-import { useContent } from '../context/ContentContext';
+import { useContent, useSection } from '../context/ContentContext';
 
 export default function Hero() {
+  const hero = useSection('home.hero');
   const { getImage } = useContent();
   const image = getImage('home.hero', hero.image);
   const reduce = useReducedMotion();

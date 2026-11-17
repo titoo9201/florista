@@ -1,16 +1,18 @@
-import { moodboard } from '../../data/inspiration';
+import { useContent, useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import MoodboardItem from '../../components/MoodboardItem';
 import Reveal from '../../components/Reveal';
 
-const columns = [1, 2, 3].map((col) => moodboard.items.filter((item) => item.column === col));
 
 /**
  * "A moodboard in bloom." — staggered 3-column gallery on desktop.
  * Below `lg` the column wrappers become `display: contents` and tiles are ordered 01 → 06.
  */
 export default function Moodboard() {
+  const moodboard = useSection('inspiration.moodboard');
+  const { getImage } = useContent();
+  const columns = [1, 2, 3].map((col) => moodboard.items.filter((item) => item.column === col));
   return (
     <section aria-labelledby="moodboard-title" className="container-page pt-16 pb-16 md:pt-[81px] md:pb-24">
       <Reveal>
@@ -29,7 +31,12 @@ export default function Moodboard() {
         {columns.map((items, i) => (
           <ul key={i} className="contents lg:flex lg:flex-col lg:gap-[26px]">
             {items.map((item) => (
-              <MoodboardItem key={item.number} {...item} style={{ order: Number(item.number) }} />
+              <MoodboardItem
+                key={item.number}
+                {...item}
+                image={getImage(`inspiration.moodboard.${item.number}`, item.image)}
+                style={{ order: Number(item.number) }}
+              />
             ))}
           </ul>
         ))}

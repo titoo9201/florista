@@ -1,4 +1,4 @@
-import { intro } from '../data/home';
+import { useSection } from '../context/ContentContext';
 import Eyebrow from '../components/Eyebrow';
 import FeatureItem from '../components/FeatureItem';
 import Heading from '../components/Heading';
@@ -6,6 +6,7 @@ import Reveal from '../components/Reveal';
 
 /** "Thoughtful by nature" — brand promise + three numbered values. */
 export default function Intro() {
+  const intro = useSection('home.intro');
   return (
     <section aria-labelledby="intro-title" className="bg-blush">
       <div className="container-page py-16 md:py-[76px]">

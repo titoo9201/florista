@@ -1,10 +1,11 @@
-import { contactHero } from '../../data/contact';
+import { useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import Reveal from '../../components/Reveal';
 
 /** Centered blush intro — "Let’s Create Something Beautiful". */
 export default function ContactHero() {
+  const contactHero = useSection('contact.contactHero');
   return (
     <section aria-labelledby="contact-title" className="mt-6 bg-blush md:mt-7">
       <Reveal className="container-page py-14 text-center md:pt-[68px] md:pb-[69px]">

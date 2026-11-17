@@ -1,4 +1,4 @@
-import { aboutHero } from '../../data/about';
+import { useContent, useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import Img from '../../components/Img';
@@ -6,6 +6,9 @@ import Reveal from '../../components/Reveal';
 
 /** Centered "Our Story" intro followed by a full-width photograph. */
 export default function AboutHero() {
+  const aboutHero = useSection('about.aboutHero');
+  const { getImage } = useContent();
+  const image = getImage('about.story', aboutHero.image);
   return (
     <section aria-labelledby="about-title" className="container-page pt-14 md:pt-[94px]">
       <Reveal className="text-center">
@@ -23,10 +26,10 @@ export default function AboutHero() {
       <Reveal delay={0.1} className="mt-8 overflow-hidden rounded-media md:mt-6">
         <Img
           priority
-          src={aboutHero.image.src}
-          alt={aboutHero.image.alt}
-          width={aboutHero.image.width}
-          height={aboutHero.image.height}
+          src={image.src}
+          alt={image.alt}
+          width={image.width}
+          height={image.height}
           className="aspect-[4/3] h-auto w-full object-cover sm:aspect-[1601/480]"
         />
       </Reveal>

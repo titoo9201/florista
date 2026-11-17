@@ -1,10 +1,11 @@
 import { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { brand } from '../data/site';
+import { useSection } from '../context/ContentContext';
 import logo from '../assets/brand/florista-logo.webp';
 
 /** Florista emblem logo linking home. Size it with a height class, e.g. `h-16`. */
 export default function Logo({ className = '', ...props }) {
+  const brand = useSection('site.brand');
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const tapCount = useRef(0);

@@ -1,16 +1,17 @@
 import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { enquiryForm as copy } from '../data/contact';
+import { enquiryForm as builtInForm } from '../data/contact';
+import { useSection } from '../context/ContentContext';
 import Button from './Button';
 import FormField from './FormField';
 import Heading from './Heading';
 import { sendEnquiry } from '../lib/sendEnquiry';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const empty = Object.fromEntries(copy.fields.map((f) => [f.name, '']));
+const empty = Object.fromEntries(builtInForm.fields.map((f) => [f.name, '']));
 
 /** Returns { field: message } for every invalid field. */
-function validate(values) {
+function validate(values, copy) {
   const errors = {};
   if (values.name.trim().length < 2) errors.name = copy.errors.name;
   if (!EMAIL.test(values.email.trim())) errors.email = copy.errors.email;
@@ -21,6 +22,7 @@ function validate(values) {
 }
 
 export default function EnquiryForm() {
+  const copy = useSection('contact.enquiryForm');
   const [values, setValues] = useState(empty);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false); // validate live after the first submit attempt
@@ -32,13 +34,13 @@ export default function EnquiryForm() {
     const next = { ...values, [e.target.name]: e.target.value };
     setValues(next);
     if (status === 'sent' || status === 'failed') setStatus('idle');
-    if (submitted) setErrors(validate(next));
+    if (submitted) setErrors(validate(next, copy));
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (status === 'sending') return;
-    const found = validate(values);
+    const found = validate(values, copy);
     setErrors(found);
     setSubmitted(true);
     const firstInvalid = copy.fields.find((f) => found[f.name]);

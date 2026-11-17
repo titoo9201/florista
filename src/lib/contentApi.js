@@ -18,6 +18,20 @@ export function resolveAssetUrl(src) {
   return resolveBundledAsset(src);
 }
 
+const bundledByUrl = Object.fromEntries(
+  Object.entries(bundledAssets).map(([key, url]) => [url, `/src/${key.slice('../'.length)}`]),
+);
+
+/**
+ * Inverse of resolveAssetUrl, used before saving: uploaded photos are stored as "/api/images/<id>"
+ * and built-in photos as "/src/assets/…", so saved links keep working after a redeploy.
+ */
+export function toStoredSrc(src) {
+  if (typeof src !== 'string') return src;
+  if (src.startsWith(`${API_URL}/api/`)) return src.slice(API_URL.length);
+  return bundledByUrl[src] || src;
+}
+
 export async function apiFetch(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

@@ -1,9 +1,10 @@
-import { closingQuote } from '../../data/inspiration';
+import { useSection } from '../../context/ContentContext';
 import Button from '../../components/Button';
 import Reveal from '../../components/Reveal';
 
 /** Centered closing quote with a call-to-action. */
 export default function ClosingQuote() {
+  const closingQuote = useSection('inspiration.closingQuote');
   return (
     <section aria-label="Find your bouquet" className="bg-blush">
       <Reveal className="container-page py-14 text-center md:pt-[71px] md:pb-[71px]">

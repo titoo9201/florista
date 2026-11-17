@@ -1,22 +1,25 @@
-import { customOrder } from '../data/home';
+import { useContent, useSection, useWhatsApp } from '../context/ContentContext';
 import Button from '../components/Button';
 import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import Img from '../components/Img';
 import Reveal from '../components/Reveal';
-import { ctaHref } from '../lib/whatsapp';
 
 /** "Your colours. Your story." — custom creation call-to-action. */
 export default function CustomOrder() {
+  const customOrder = useSection('home.customOrder');
+  const { ctaHref } = useWhatsApp();
+  const { getImage } = useContent();
+  const image = getImage('home.custom-order', customOrder.image);
   return (
     <section aria-labelledby="custom-title" className="bg-blush">
       <div className="container-page grid items-start gap-8 py-12 md:grid-cols-[minmax(0,547fr)_minmax(0,669fr)] md:gap-12 md:py-[72px] xl:gap-16">
         <Reveal className="overflow-hidden rounded-media">
           <Img
-            src={customOrder.image.src}
-            alt={customOrder.image.alt}
-            width={customOrder.image.width}
-            height={customOrder.image.height}
+            src={image.src}
+            alt={image.alt}
+            width={image.width}
+            height={image.height}
             className="aspect-[547/400] h-auto w-full object-cover"
           />
         </Reveal>

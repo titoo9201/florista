@@ -1,17 +1,18 @@
-import { stayInBloom } from '../../data/contact';
-import { socials } from '../../data/site';
 import Heading from '../../components/Heading';
 import InfoCard from '../../components/InfoCard';
 import Reveal from '../../components/Reveal';
-import { socialHref } from '../../lib/whatsapp';
-
-const hrefFor = (icon) => {
-  const social = socials.find((s) => s.icon === icon);
-  return (social && socialHref(social)) || undefined;
-};
+import { useSection, useWhatsApp } from '../../context/ContentContext';
 
 /** "Let’s stay in bloom." — social profile cards on blush. */
 export default function StayInBloom() {
+  const stayInBloom = useSection('contact.stayInBloom');
+  const instagram = useSection('site.instagram');
+  const { hasWhatsApp, whatsappLink } = useWhatsApp();
+  const hrefFor = (icon) => {
+    if (icon === 'instagram') return instagram.url || undefined;
+    if (icon === 'whatsapp' && hasWhatsApp) return whatsappLink('general');
+    return undefined;
+  };
   return (
     <section aria-labelledby="bloom-title" className="bg-blush">
       <div className="container-page py-14 text-center md:pt-[62px] md:pb-16">
@@ -27,6 +28,7 @@ export default function StayInBloom() {
             <Reveal as="li" key={item.title} delay={i * 0.08}>
               <InfoCard
                 {...item}
+                value={item.source === 'instagram' ? instagram.handle : item.value}
                 href={hrefFor(item.icon)} align="center" className="bg-cream px-6 pt-[26px] pb-6" />
             </Reveal>
           ))}

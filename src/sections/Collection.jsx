@@ -1,14 +1,15 @@
-import { collection } from '../data/home';
+import { collection as builtInCollection } from '../data/home';
 import Eyebrow from '../components/Eyebrow';
 import Heading from '../components/Heading';
 import ProductCard from '../components/ProductCard';
 import Reveal from '../components/Reveal';
-import { useContent } from '../context/ContentContext';
+import { useContent, useSection } from '../context/ContentContext';
 
 /** "From our hands to your heart." — product preview grid. */
 export default function Collection() {
   const { getProducts } = useContent();
-  const products = getProducts('home', collection.products);
+  const collection = useSection('home.collection');
+  const products = getProducts('home', builtInCollection.products);
   return (
     <section id={collection.id} aria-labelledby="collection-title" className="container-page pt-16 pb-16 md:pt-[78px] md:pb-20">
       <Reveal>

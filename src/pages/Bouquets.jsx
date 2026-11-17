@@ -1,9 +1,10 @@
-import { bouquetsCta } from '../data/bouquets';
+import { useSection } from '../context/ContentContext';
 import BouquetsHero from '../sections/bouquets/BouquetsHero';
 import BouquetCollection from '../sections/bouquets/BouquetCollection';
 import CtaBanner from '../components/CtaBanner';
 
 export default function Bouquets() {
+  const bouquetsCta = useSection('bouquets.bouquetsCta');
   return (
     <>
       <BouquetsHero />

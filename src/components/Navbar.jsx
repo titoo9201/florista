@@ -1,13 +1,14 @@
 import { useEffect, useId, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { navLinks } from '../data/site';
+import { useSection } from '../context/ContentContext';
 import Logo from './Logo';
 
 const linkClass = ({ isActive }) =>
   `rounded-sm underline-offset-[5px] decoration-1 hover:underline ${isActive ? 'underline' : ''}`;
 
 export default function Navbar() {
+  const navLinks = useSection('site.navLinks');
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const reduce = useReducedMotion();

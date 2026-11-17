@@ -1,4 +1,4 @@
-import { aboutValues } from '../../data/about';
+import { useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import FeatureItem from '../../components/FeatureItem';
 import Heading from '../../components/Heading';
@@ -6,6 +6,7 @@ import Reveal from '../../components/Reveal';
 
 /** "Made with meaning." — four numbered brand values on blush. */
 export default function AboutValues() {
+  const aboutValues = useSection('about.aboutValues');
   return (
     <section aria-labelledby="values-title" className="bg-blush">
       <div className="container-page py-16 md:pt-[74px] md:pb-[74px]">

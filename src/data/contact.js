@@ -16,9 +16,9 @@ export const contactMethods = {
   items: [
     // The number itself is never shown; the card opens a WhatsApp chat (number from .env.local).
     { title: 'WhatsApp', value: 'Chat with us on WhatsApp', whatsapp: true },
-    { title: 'Email us', value: business.email, href: `mailto:${business.email}` },
-    { title: 'Find us', value: business.location },
-    { title: 'Instagram', value: instagram.handle, href: instagram.url },
+    { title: 'Email us', value: business.email, href: `mailto:${business.email}`, source: 'email' },
+    { title: 'Find us', value: business.location, source: 'location' },
+    { title: 'Instagram', value: instagram.handle, href: instagram.url, source: 'instagram' },
   ],
 };
 
@@ -35,7 +35,7 @@ export const enquiryForm = {
   note: 'Please share only the details needed for your enquiry.',
   submit: 'Send Enquiry',
   privacy: '[Add your privacy notice and enquiry handling details here.]',
-  // Sent via EmailJS (see src/lib/sendEnquiry.js and .env.local).
+  // Sent by the API (server/index.js → /api/enquiry) to the email set in the admin panel.
   sending: 'Sending…',
   success: 'Thank you! We’ll be in touch soon.',
   failure: 'Sorry, your enquiry couldn’t be sent. Please try again in a moment.',
@@ -52,7 +52,7 @@ export const stayInBloom = {
   body: 'For floral inspiration, handmade details and your next thoughtful gift.',
   // Profile URLs come from `socials` in site.js once added.
   items: [
-    { icon: 'instagram', title: 'Instagram', value: instagram.handle },
+    { icon: 'instagram', title: 'Instagram', value: instagram.handle, source: 'instagram' },
     { icon: 'whatsapp', title: 'WhatsApp', value: 'Chat with us on WhatsApp' },
   ],
 };

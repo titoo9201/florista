@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { brand, contact, developer, footer, navLinks, socials } from '../data/site';
+import { developer } from '../data/site';
 import Logo from './Logo';
 import SmartLink from './SmartLink';
 import SocialIcon from './icons/SocialIcon';
-import { socialHref } from '../lib/whatsapp';
+import { useContactEmail, useSection, useWhatsApp } from '../context/ContentContext';
 
 /** Renders a link when `href` is set, plain text otherwise (for design placeholders). */
 function MaybeLink({ href, className = '', children }) {
@@ -19,6 +19,24 @@ function MaybeLink({ href, className = '', children }) {
 const colHeading = 'text-[10px] leading-4 uppercase';
 
 export default function Footer() {
+  // Everything except the developer credit comes from the admin panel (with built-in defaults).
+  const brand = useSection('site.brand');
+  const navLinks = useSection('site.navLinks');
+  const footer = useSection('site.footer');
+  const contact = useSection('site.contact');
+  const business = useSection('site.business');
+  const email = useContactEmail();
+  const instagram = useSection('site.instagram');
+  const { socialHref } = useWhatsApp();
+  const socials = [
+    { label: 'Instagram', icon: 'instagram', href: instagram.url },
+    { label: 'WhatsApp', icon: 'whatsapp', href: '' },
+  ];
+  const contactItems = [
+    email && { label: email, href: `mailto:${email}` },
+    business.location && { label: business.location },
+  ].filter(Boolean);
+
   return (
     <footer className="bg-blush">
       <div className="container-page pt-14 pb-9 md:pt-16">
@@ -26,9 +44,11 @@ export default function Footer() {
           <div>
             <Logo className="h-24 md:h-[112px]" />
             <p className="mt-[14px] text-sm leading-[22px]">
-              {brand.tagline[0]}
-              <br />
-              {brand.tagline[1]}
+              {brand.tagline.map((line, i) => (
+                <span key={i} className="block">
+                  {line}
+                </span>
+              ))}
             </p>
             <ul className="mt-[10px] flex flex-wrap items-center gap-x-[22px] gap-y-3 text-xs leading-5" aria-label="Social media">
               {socials.map((s) => (
@@ -60,7 +80,7 @@ export default function Footer() {
           <div id="contact">
             <h2 className={colHeading}>{contact.heading}</h2>
             <address className="mt-3 space-y-3 text-[13px] leading-[18px] not-italic">
-              {contact.items.map((item) => (
+              {contactItems.map((item) => (
                 <p key={item.label}>
                   <MaybeLink href={item.href}>{item.label}</MaybeLink>
                 </p>

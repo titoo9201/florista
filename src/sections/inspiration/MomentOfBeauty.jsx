@@ -1,4 +1,4 @@
-import { momentOfBeautySection as data } from '../../data/inspiration';
+import { useContent, useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Img from '../../components/Img';
 import Reveal from '../../components/Reveal';
@@ -6,6 +6,9 @@ import SmartLink from '../../components/SmartLink';
 
 /** "A moment of beauty" — large italic quote beside a photograph. */
 export default function MomentOfBeauty() {
+  const data = useSection('inspiration.momentOfBeautySection');
+  const { getImage } = useContent();
+  const image = getImage('inspiration.moment', data.image);
   return (
     <section aria-labelledby="moment-title" className="bg-blush">
       <div className="container-page grid items-start gap-10 py-14 md:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,542px)] lg:gap-16">
@@ -28,10 +31,10 @@ export default function MomentOfBeauty() {
         <Reveal delay={0.1} className="overflow-hidden rounded-media">
           <SmartLink href={data.link} className="group block">
             <Img
-              src={data.image.src}
-              alt={data.image.alt}
-              width={data.image.width}
-              height={data.image.height}
+              src={image.src}
+              alt={image.alt}
+              width={image.width}
+              height={image.height}
               className="aspect-[542/340] h-auto w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
           </SmartLink>

@@ -24,6 +24,17 @@ if (missing.length) {
   process.exit(1);
 }
 
+// Optional: enquiry emails (EmailJS, sent from this server) and the default WhatsApp number.
+// These stay on the server so they never appear in the website's JavaScript.
+const {
+  EMAILJS_SERVICE_ID,
+  EMAILJS_TEMPLATE_ID,
+  EMAILJS_PUBLIC_KEY,
+  EMAILJS_PRIVATE_KEY,
+  ENQUIRY_TO_EMAIL,
+  WHATSAPP_NUMBER,
+} = process.env;
+
 const COLLECTIONS = ['home', 'bouquets', 'candles'];
 const IMAGE_TYPES = ['image/webp', 'image/jpeg', 'image/png'];
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -46,7 +57,18 @@ const products = db.collection('products');
 const siteImages = db.collection('siteImages');
 const uploads = db.collection('uploads');
 const meta = db.collection('meta');
+const siteContent = db.collection('siteContent'); // editable website text/settings, one doc per section path
+// Dashboard data: one small counter document per day, anonymous visitor ids (auto-deleted after
+// 120 days) and the enquiries received through the Contact form.
+const daily = db.collection('dailyStats');
+const visits = db.collection('visits');
+const enquiries = db.collection('enquiries');
 await products.createIndex({ collection: 1, order: 1 });
+await visits.createIndex({ createdAt: 1 }, { expireAfterSeconds: 120 * 24 * 60 * 60 });
+await enquiries.createIndex({ createdAt: -1 });
+
+/** Today's date in India as "YYYY-MM-DD" (the dashboard counts days in IST). */
+const today = (date = new Date()) => date.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 console.log(`Connected to MongoDB database "${MONGODB_DB}"`);
 
 // ---------- helpers ----------
@@ -109,16 +131,22 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.get(
   '/api/content',
   wrap(async (_req, res) => {
-    const [state, items, images] = await Promise.all([
+    const [state, items, images, sections] = await Promise.all([
       meta.findOne({ _id: 'site' }),
       products.find().sort({ collection: 1, order: 1 }).toArray(),
       siteImages.find().toArray(),
+      siteContent.find().toArray(),
     ]);
+    const sectionMap = Object.fromEntries(sections.map(({ _id, value }) => [_id, value]));
+    // Until the admin saves WhatsApp settings, use the number from the server's environment.
+    if (WHATSAPP_NUMBER && !sectionMap['site.whatsapp']) sectionMap['site.whatsapp'] = { number: WHATSAPP_NUMBER };
     res.set('Cache-Control', 'no-cache');
     res.json({
       seeded: Boolean(state?.seeded),
       products: items.map(toApi),
       siteImages: Object.fromEntries(images.map(({ _id, ...img }) => [_id, img])),
+      sections: sectionMap,
+      contactEmail: ENQUIRY_TO_EMAIL || null, // shown on the website; changed only by the developer (server env)
     });
   }),
 );
@@ -135,10 +163,123 @@ app.get(
   }),
 );
 
+// ---------- enquiry form (Contact page) ----------
+// The recipient is decided here (admin's email from the database, else ENQUIRY_TO_EMAIL), never by the
+// browser — so nobody can use this endpoint to send email to other people.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const enquiryLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many enquiries from this device. Please try again in a few minutes.' },
+});
+
+app.post(
+  '/api/enquiry',
+  enquiryLimiter,
+  wrap(async (req, res) => {
+    const body = req.body ?? {};
+    if (body.company) return res.json({ ok: true }); // honeypot field filled → a bot; pretend success
+    const name = str(body.name, 100);
+    const email = str(body.email, 200);
+    const phone = str(body.phone, 30);
+    const product = str(body.product, 120);
+    const message = str(body.message, 3000);
+    const phoneDigits = phone.replace(/[\s\-()]/g, '').replace(/^(\+91|0091|0)/, '');
+    if (name.length < 2 || !EMAIL_RE.test(email) || message.length < 10 || (phone && !/^[6-9]\d{9}$/.test(phoneDigits))) {
+      return res.status(400).json({ error: 'Please check the form and try again.' });
+    }
+
+    // Every enquiry is kept for the admin dashboard, so nothing is lost even if the email fails.
+    const { insertedId } = await enquiries.insertOne({ name, email, phone, product, message, createdAt: new Date(), emailed: false });
+    await daily.updateOne({ _id: today() }, { $inc: { enquiries: 1 } }, { upsert: true });
+
+    // The recipient is fixed by the developer (ENQUIRY_TO_EMAIL on the server) — the admin panel cannot change it.
+    const toEmail = ENQUIRY_TO_EMAIL;
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !toEmail) {
+      console.error('Enquiry email is not configured (EMAILJS_* / ENQUIRY_TO_EMAIL) — saved to the dashboard only.');
+      return res.json({ ok: true });
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id: EMAILJS_PUBLIC_KEY,
+        accessToken: EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email: toEmail,
+          name,
+          email,
+          phone: phone || 'Not provided',
+          product: product || 'Not specified',
+          message,
+          submitted_at: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.error('EmailJS error', response.status, await response.text());
+      // Still received (it is in the dashboard), so the customer gets the normal thank-you message.
+      return res.json({ ok: true });
+    }
+    await enquiries.updateOne({ _id: insertedId }, { $set: { emailed: true } });
+    res.json({ ok: true });
+  }),
+);
+
+// ---------- visitor stats (anonymous) ----------
+// The website sends: { type: 'pageview', path, vid } or { type: 'whatsapp', product?, vid }.
+// `vid` is a random id kept in the visitor's browser — no names, emails or IP addresses are stored.
+const BOT_UA = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse/i;
+const trackLimiter = rateLimit({ windowMs: 60 * 1000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false, message: { ok: false } });
+const statKey = (s, max = 60) => str(s, max).replace(/[.$]/g, '').replace(/\s+/g, ' ');
+
+app.post(
+  '/api/track',
+  trackLimiter,
+  express.text({ type: 'text/plain', limit: '2kb' }), // sent as text/plain (no preflight) — parsed below
+  wrap(async (req, res) => {
+    if (BOT_UA.test(req.headers['user-agent'] || '')) return res.status(204).end();
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        return res.status(400).end();
+      }
+    }
+    const { type, path, product, vid } = body ?? {};
+    const day = today();
+    const visitor = /^[a-zA-Z0-9-]{8,64}$/.test(vid || '') ? vid : null;
+
+    if (type === 'pageview') {
+      const page = statKey(String(path || '/').split(/[?#]/)[0]) || '/';
+      if (!page.startsWith('/') || page.startsWith('/admin')) return res.status(204).end();
+      const inc = { pageViews: 1, [`pages.${page === '/' ? 'home' : page.slice(1)}`]: 1 };
+      if (visitor) {
+        // First page view of this visitor today → count one visitor.
+        const first = await visits.updateOne({ _id: `${day}:${visitor}` }, { $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+        if (first.upsertedCount) inc.visitors = 1;
+      }
+      await daily.updateOne({ _id: day }, { $inc: inc }, { upsert: true });
+    } else if (type === 'whatsapp') {
+      const name = statKey(product, 80);
+      const inc = { whatsapp: 1, ...(name ? { [`orders.${name}`]: 1 } : {}) };
+      await daily.updateOne({ _id: day }, { $inc: inc }, { upsert: true });
+    }
+    res.status(204).end();
+  }),
+);
+
 // ---------- admin auth ----------
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 8, // 8 attempts per 15 minutes per IP — protects the 6-digit passkey from guessing
+  limit: 8, // 8 wrong attempts per 15 minutes per IP — protects the passkey from guessing
+  skipSuccessfulRequests: true, // correct passkeys never use up the allowance
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many attempts. Please wait 15 minutes and try again.' },
@@ -146,17 +287,53 @@ const loginLimiter = rateLimit({
 
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest();
 
-app.post('/api/admin/login', loginLimiter, (req, res) => {
-  const ok = crypto.timingSafeEqual(sha(req.body?.passkey ?? ''), sha(ADMIN_PASSKEY));
-  if (!ok) return res.status(401).json({ error: 'Incorrect passkey' });
-  const token = jwt.sign({ role: 'admin' }, TOKEN_SECRET, { expiresIn: '12h' });
-  res.json({ token });
-});
+// Two passkeys open the admin panel:
+//  • MASTER passkey = ADMIN_PASSKEY in the server environment. Always valid; it can only be changed by the
+//    developer (edit the env + redeploy). Nothing in the admin panel can remove or replace it.
+//  • ADMIN passkey  = set/changed by the admin in the panel (Security). Stored only as a scrypt hash in
+//    meta { _id: 'auth' }. Changing it replaces the previous admin passkey; the master keeps working.
+// ADMIN_PASSKEY_RESET=1 removes the admin passkey on start-up (the master is unaffected).
+const scrypt = (passkey, salt) =>
+  new Promise((resolve, reject) => crypto.scrypt(String(passkey), salt, 64, (err, key) => (err ? reject(err) : resolve(key))));
+
+if (process.env.ADMIN_PASSKEY_RESET === '1') {
+  await meta.deleteOne({ _id: 'auth' });
+  console.warn('ADMIN_PASSKEY_RESET=1 → admin passkey removed; the master passkey (ADMIN_PASSKEY) still works. Remove the flag now.');
+}
+let auth = (await meta.findOne({ _id: 'auth' })) || { version: 0 };
+
+const isMasterPasskey = (passkey) => crypto.timingSafeEqual(sha(passkey ?? ''), sha(ADMIN_PASSKEY));
+
+async function isAdminPasskey(passkey) {
+  if (!auth.hash || !auth.salt) return false;
+  const key = await scrypt(passkey ?? '', Buffer.from(auth.salt, 'hex'));
+  return crypto.timingSafeEqual(key, Buffer.from(auth.hash, 'hex'));
+}
+
+/** True for the master passkey (env) OR the admin's own passkey — both always work. */
+async function passkeyMatches(passkey) {
+  const master = isMasterPasskey(passkey);
+  const admin = await isAdminPasskey(passkey); // always computed, so timing does not reveal which one matched
+  return master || admin;
+}
+
+// `pv` (passkey version) logs out every other session when the passkey is changed.
+const issueToken = () => jwt.sign({ role: 'admin', pv: auth.version || 0 }, TOKEN_SECRET, { expiresIn: '12h' });
+
+app.post(
+  '/api/admin/login',
+  loginLimiter,
+  wrap(async (req, res) => {
+    if (!(await passkeyMatches(req.body?.passkey))) return res.status(401).json({ error: 'Incorrect passkey' });
+    res.json({ token: issueToken() });
+  }),
+);
 
 function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace(/^Bearer /, '');
   try {
-    if (jwt.verify(token, TOKEN_SECRET).role !== 'admin') throw new Error('role');
+    const payload = jwt.verify(token, TOKEN_SECRET);
+    if (payload.role !== 'admin' || (payload.pv || 0) !== (auth.version || 0)) throw new Error('stale');
     next();
   } catch {
     res.status(401).json({ error: 'Session expired — please enter the passkey again.' });
@@ -166,12 +343,82 @@ app.use('/api/admin', requireAdmin);
 
 app.get('/api/admin/me', (_req, res) => res.json({ ok: true }));
 
+// Security tab: whether an admin passkey has been set (the master passkey always exists).
+app.get('/api/admin/passkey', (_req, res) => res.json({ adminPasskeySet: Boolean(auth.hash), updatedAt: auth.updatedAt || null }));
+
+// ---------- dashboard ----------
+const sumMaps = (docs, field) => {
+  const out = {};
+  for (const d of docs) for (const [k, v] of Object.entries(d[field] || {})) out[k] = (out[k] || 0) + v;
+  return Object.entries(out).sort((a, b) => b[1] - a[1]);
+};
+
+app.get(
+  '/api/admin/stats',
+  wrap(async (req, res) => {
+    const span = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+    const dates = [];
+    for (let i = span - 1; i >= 0; i--) dates.push(today(new Date(Date.now() - i * 86400000)));
+    const docs = await daily.find({ _id: { $in: dates } }).toArray();
+    const byDay = Object.fromEntries(docs.map((d) => [d._id, d]));
+    const days = dates.map((date) => ({
+      date,
+      visitors: byDay[date]?.visitors || 0,
+      pageViews: byDay[date]?.pageViews || 0,
+      whatsapp: byDay[date]?.whatsapp || 0,
+      enquiries: byDay[date]?.enquiries || 0,
+    }));
+    const totals = days.reduce(
+      (t, d) => ({ visitors: t.visitors + d.visitors, pageViews: t.pageViews + d.pageViews, whatsapp: t.whatsapp + d.whatsapp, enquiries: t.enquiries + d.enquiries }),
+      { visitors: 0, pageViews: 0, whatsapp: 0, enquiries: 0 },
+    );
+    const recent = await enquiries.find().sort({ createdAt: -1 }).limit(25).toArray();
+    res.json({
+      days,
+      totals,
+      topPages: sumMaps(docs, 'pages').slice(0, 8).map(([page, views]) => ({ page, views })),
+      topProducts: sumMaps(docs, 'orders').slice(0, 8).map(([name, clicks]) => ({ name, clicks })),
+      enquiries: recent.map(({ _id, ...e }) => ({ id: String(_id), ...e })),
+    });
+  }),
+);
+
+app.delete(
+  '/api/admin/enquiries/:id',
+  wrap(async (req, res) => {
+    if (!ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    await enquiries.deleteOne({ _id: new ObjectId(req.params.id) });
+    res.json({ ok: true });
+  }),
+);
+
+app.put(
+  '/api/admin/passkey',
+  loginLimiter, // wrong "current passkey" attempts count towards the same limit as logins
+  wrap(async (req, res) => {
+    const current = String(req.body?.current ?? '');
+    const next = String(req.body?.next ?? '').trim();
+    // Either passkey (master or the current admin passkey) may be used to authorise the change.
+    if (!(await passkeyMatches(current))) return res.status(401).json({ error: 'Current passkey is incorrect' });
+    if (next.length < 6 || next.length > 64) return res.status(400).json({ error: 'New passkey must be 6–64 characters long.' });
+    if (next === current) return res.status(400).json({ error: 'New passkey must be different from the current one.' });
+    if (isMasterPasskey(next)) return res.status(400).json({ error: 'That is the master passkey — choose a different one for the admin passkey.' });
+    const salt = crypto.randomBytes(16);
+    const hash = await scrypt(next, salt);
+    auth = { _id: 'auth', hash: hash.toString('hex'), salt: salt.toString('hex'), version: (auth.version || 0) + 1, updatedAt: new Date() };
+    await meta.replaceOne({ _id: 'auth' }, auth, { upsert: true });
+    res.json({ ok: true, token: issueToken() }); // this device stays logged in; all others are signed out
+  }),
+);
+
 // First run: copy the website's current items into the database.
 app.post(
   '/api/admin/seed',
   wrap(async (req, res) => {
     const state = await meta.findOne({ _id: 'site' });
-    if (state?.seeded) return res.status(409).json({ error: 'Already imported' });
+    // mode "missing": add back built-in items that are not in the database (existing ones are untouched).
+    const restoring = req.body?.mode === 'missing';
+    if (state?.seeded && !restoring) return res.status(409).json({ error: 'Already imported' });
     const list = Array.isArray(req.body?.products) ? req.body.products : [];
     const docs = list
       .filter((p) => COLLECTIONS.includes(p.collection) && str(p.id, 80))
@@ -304,6 +551,52 @@ app.delete(
   wrap(async (req, res) => {
     const doc = await siteImages.findOneAndDelete({ _id: req.params.key });
     if (doc) await deleteUploads([doc.src, ...(doc.previousImages || []).map((image) => image.src)]);
+    res.json({ ok: true });
+  }),
+);
+
+// ---------- website text & settings (one document per section, e.g. "home.hero") ----------
+const SECTION_PATH = /^[a-z]+\.[a-zA-Z0-9]{1,60}$/;
+const MAX_SECTION_BYTES = 100 * 1024;
+
+/** Keeps only JSON-safe data (strings, numbers, booleans, arrays, plain objects) and trims long strings. */
+function cleanValue(value, depth = 0) {
+  if (depth > 8) return undefined;
+  if (typeof value === 'string') return value.slice(0, 5000);
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'boolean' || value === null) return value;
+  if (Array.isArray(value)) return value.slice(0, 100).map((v) => cleanValue(v, depth + 1)).filter((v) => v !== undefined);
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value).slice(0, 100)) {
+      if (/^[a-zA-Z0-9_-]{1,60}$/.test(k)) {
+        const cleaned = cleanValue(v, depth + 1);
+        if (cleaned !== undefined) out[k] = cleaned;
+      }
+    }
+    return out;
+  }
+  return undefined;
+}
+
+app.put(
+  '/api/admin/content/:path',
+  wrap(async (req, res) => {
+    if (!SECTION_PATH.test(req.params.path)) return res.status(400).json({ error: 'Bad section' });
+    const value = cleanValue(req.body?.value);
+    if (value === undefined) return res.status(400).json({ error: 'Nothing to save' });
+    if (Buffer.byteLength(JSON.stringify(value)) > MAX_SECTION_BYTES) return res.status(413).json({ error: 'This section is too large' });
+    await siteContent.updateOne({ _id: req.params.path }, { $set: { value, updatedAt: new Date() } }, { upsert: true });
+    res.json({ path: req.params.path, value });
+  }),
+);
+
+// "Reset to original": remove the saved version so the website's built-in text is used again.
+app.delete(
+  '/api/admin/content/:path',
+  wrap(async (req, res) => {
+    if (!SECTION_PATH.test(req.params.path)) return res.status(400).json({ error: 'Bad section' });
+    await siteContent.deleteOne({ _id: req.params.path });
     res.json({ ok: true });
   }),
 );

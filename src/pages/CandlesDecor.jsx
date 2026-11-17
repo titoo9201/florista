@@ -1,15 +1,19 @@
-import { candleCollection, candleFilters, candlesCta, candlesHero } from '../data/candles';
+import { candleCollection as builtIn } from '../data/candles';
 import PageHero from '../components/PageHero';
 import FilterableCollection from '../components/FilterableCollection';
 import CtaBanner from '../components/CtaBanner';
-import { useContent } from '../context/ContentContext';
+import { useContent, useSection } from '../context/ContentContext';
 
 export default function CandlesDecor() {
-  const { getProducts } = useContent();
-  const products = getProducts('candles', candleCollection.items);
+  const { getProducts, getImage } = useContent();
+  const candlesHero = useSection('candles.candlesHero');
+  const candleFilters = useSection('candles.candleFilters');
+  const candleCollection = useSection('candles.candleCollection');
+  const candlesCta = useSection('candles.candlesCta');
+  const products = getProducts('candles', builtIn.items);
   return (
     <>
-      <PageHero id="candles-title" {...candlesHero} />
+      <PageHero id="candles-title" {...candlesHero} image={getImage('candles.hero', candlesHero.image)} />
       <FilterableCollection
         id="candle-edit"
         sectionId="candle-collection"

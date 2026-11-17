@@ -10,6 +10,7 @@
   --color-line: #e9dcd2;
   --color-sage: #a8b5a0; /* active filter pill */
   --color-error: #a13d3d; /* form errors — 6.5:1 on white */
+  --color-chart: #b4546b; /* admin dashboard bars — validated: chroma, lightness band, ≥3:1 on white */
   --color-card: #ffffff;
 
   --font-serif: 'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;

@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { bouquetCollection as data, bouquetFilters } from '../../data/bouquets';
+import { bouquetCollection as builtIn } from '../../data/bouquets';
 import FilterPill from '../../components/FilterPill';
 import ProductCard from '../../components/ProductCard';
-import { useContent } from '../../context/ContentContext';
+import { useContent, useSection } from '../../context/ContentContext';
 
 /** Filterable bouquet grid. Filtering is client-side over the static data. */
 export default function BouquetCollection() {
+  const data = useSection('bouquets.bouquetCollection');
+  const bouquetFilters = useSection('bouquets.bouquetFilters');
   const { getProducts } = useContent();
   const [filter, setFilter] = useState('all');
   const reduce = useReducedMotion();
-  const products = getProducts('bouquets', data.items);
+  const products = getProducts('bouquets', builtIn.items);
   const items = filter === 'all' ? products : products.filter((item) => item.categories.includes(filter));
   const count = String(items.length).padStart(2, '0');
 

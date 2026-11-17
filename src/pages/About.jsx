@@ -1,4 +1,4 @@
-import { aboutClosing } from '../data/about';
+import { useSection } from '../context/ContentContext';
 import AboutHero from '../sections/about/AboutHero';
 import MakerNote from '../sections/about/MakerNote';
 import AboutValues from '../sections/about/AboutValues';
@@ -6,6 +6,7 @@ import AboutGallery from '../sections/about/AboutGallery';
 import CtaBanner from '../components/CtaBanner';
 
 export default function About() {
+  const aboutClosing = useSection('about.aboutClosing');
   return (
     <>
       <AboutHero />

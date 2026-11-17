@@ -1,10 +1,11 @@
-import { inspirationHero } from '../../data/inspiration';
+import { useSection } from '../../context/ContentContext';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import Reveal from '../../components/Reveal';
 
 /** Centered intro — "A Little World of Flowers". */
 export default function InspirationHero() {
+  const inspirationHero = useSection('inspiration.inspirationHero');
   return (
     <section aria-labelledby="inspiration-title" className="container-page pt-16 pb-14 text-center md:pt-[100px] md:pb-[72px]">
       <Reveal>

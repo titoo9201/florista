@@ -1,12 +1,12 @@
-import { bouquetsHero } from '../../data/bouquets';
 import Eyebrow from '../../components/Eyebrow';
 import Heading from '../../components/Heading';
 import Img from '../../components/Img';
 import Reveal from '../../components/Reveal';
-import { useContent } from '../../context/ContentContext';
+import { useContent, useSection } from '../../context/ContentContext';
 
 /** Blush hero — "Our Beautiful Bouquets" with a feature photograph. */
 export default function BouquetsHero() {
+  const bouquetsHero = useSection('bouquets.bouquetsHero');
   const { getImage } = useContent();
   const image = getImage('bouquets.hero', bouquetsHero.image);
   return (

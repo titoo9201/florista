@@ -1,0 +1,113 @@
+// Guided tour of the admin panel.
+// target → data-tour marker to highlight (array = first one visible on screen); none = centred card
+// view   → which admin page to open for this step; drawer → open the phone menu for this step
+export const TOUR_STEPS = [
+  {
+    id: 'welcome',
+    title: 'Welcome to your Florista admin panel 🌸',
+    body: 'This short tour shows how to change products, prices, photos, text and contact details. Use Next and Back to move, or Skip at any time. You can watch it again from the menu: ▶ Play tutorial.',
+  },
+  {
+    id: 'menu',
+    target: ['menu-button', 'sidebar'],
+    title: 'The menu',
+    body: 'Everything is in this menu. On a phone, tap ☰ (three lines) at the top to open it. Pick a section and the page changes. Sub-items (like Bouquets) take you straight there.',
+  },
+  {
+    id: 'dashboard',
+    view: { tab: 'dashboard', sub: null },
+    target: 'dashboard-stats',
+    title: 'Dashboard',
+    body: 'Your shop at a glance: how many people visited, pages they opened, WhatsApp chats (including “Contact for Order” taps) and enquiries. Choose Last 7, 30 or 90 days at the top. Tap a box to show it in the chart.',
+  },
+  {
+    id: 'dashboard-chart',
+    view: { tab: 'dashboard', sub: null },
+    target: 'dashboard-chart',
+    title: 'Charts',
+    body: 'The chart shows one bar per day — hover or tap a bar to see the number. Below it you can see your most ordered products and most visited pages. “Show as table” lists every day.',
+  },
+  {
+    id: 'dashboard-enquiries',
+    view: { tab: 'dashboard', sub: null },
+    target: 'dashboard-enquiries',
+    title: 'Enquiries',
+    body: 'Every message from the Contact page form is saved here — even if the email did not arrive. Reply by email, WhatsApp or phone with one tap, and delete old ones.',
+  },
+  {
+    id: 'collections',
+    view: { tab: 'products', sub: 'home' },
+    target: 'collections',
+    title: 'Products & prices',
+    body: 'Choose which products to edit: the Home page collection, Bouquets, or Candles & decor. Each card below is one product on the website.',
+  },
+  {
+    id: 'product-card',
+    view: { tab: 'products', sub: 'home' },
+    target: 'product-card',
+    title: 'Edit a product',
+    body: 'Change the name, price, description or photo, then press Save — it is live on the website straight away. ↑ ↓ change the order. “Hide from website” hides it without deleting. Delete removes it for good. Notes under each box show the right format.',
+  },
+  {
+    id: 'new-product',
+    view: { tab: 'products', sub: 'home' },
+    target: 'new-product',
+    title: 'Add a new item',
+    body: 'Scroll to the bottom of a collection. Add a photo (any size — it is resized automatically), type the name and price, tick the categories, then press Add item.',
+  },
+  {
+    id: 'photos',
+    view: { tab: 'photos', sub: 'Home' },
+    target: 'photo-slot',
+    title: 'Photos',
+    body: 'Every photo on the website is here, grouped by page. Press Change photo, pick a picture, then Save. The note tells you which photo shape fits best. “Use original photo” brings back the old one.',
+  },
+  {
+    id: 'text-list',
+    view: { tab: 'text', sub: 'Home' },
+    target: 'section-list',
+    title: 'Website text',
+    body: 'Choose a page in the menu (e.g. Home), then choose a part of that page here — like “Top banner”.',
+  },
+  {
+    id: 'text-editor',
+    view: { tab: 'text', sub: 'Home' },
+    target: 'section-editor',
+    title: 'Type your new text',
+    body: 'Every box shows a note and an example underneath. For two-line headings, put each line on its own row. If a box shows ⚠, the format is not right yet.',
+  },
+  {
+    id: 'save-bar',
+    view: { tab: 'text', sub: 'Home' },
+    target: 'save-bar',
+    title: 'Save, discard or reset',
+    body: 'Save changes publishes your text. Discard throws away what you typed. Reset to original brings back the website’s original text. A “Changed” label shows which parts you have edited.',
+  },
+  {
+    id: 'contact',
+    view: { tab: 'contact', sub: null },
+    target: 'section-editor',
+    title: 'Contact & WhatsApp',
+    body: 'Your WhatsApp number (91 + 10-digit mobile, e.g. 919876543210) and the ready-made WhatsApp messages customers send. Use the list for your location and Instagram. The business email can only be changed by your developer.',
+  },
+  {
+    id: 'security',
+    view: { tab: 'security', sub: null },
+    target: 'passkey-form',
+    title: 'Security',
+    body: 'Two passkeys open this panel: the master passkey (set by your developer — it always works and can’t be changed here) and your own admin passkey, which you set or change here. Both keep working. Changing your admin passkey logs out other devices.',
+  },
+  {
+    id: 'footer',
+    target: 'sidebar-footer',
+    drawer: true,
+    title: 'Tutorial, website & log out',
+    body: '▶ Play tutorial shows this tour again. View website opens your shop so you can check your changes. Log out when you are done — especially on a shared phone or computer.',
+  },
+  {
+    id: 'done',
+    view: { tab: 'dashboard', sub: null },
+    title: 'You’re all set! 🌷',
+    body: 'Changes you save appear on the website for everyone. If you ever get stuck, open the menu and press ▶ Play tutorial.',
+  },
+];
