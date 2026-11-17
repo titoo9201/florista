@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, authHeaders } from '../lib/contentApi';
+import ReplyComposer from './ReplyComposer';
+import { REPLY_TEMPLATES, addressText, formatAmount, formatDate, orderTotals, formatTotal } from '../../server/emailTemplates.js';
 
 const RANGES = [7, 30, 90];
 const METRICS = [
@@ -121,30 +123,136 @@ function BarList({ items, empty }) {
   );
 }
 
-function EnquiryCard({ enquiry, onDelete }) {
+const templateName = (id) => REPLY_TEMPLATES.find((t) => t.id === id)?.label || id;
+const when = (d) => new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
+
+/** Products (qty × price), estimated total and delivery details of an enquiry. */
+function OrderDetails({ enquiry }) {
+  const totals = orderTotals(enquiry.items || []);
+  const { lines } = totals;
+  const d = enquiry.delivery;
+  if (!lines.length && !d && !enquiry.date && !enquiry.occasion) return null;
+  return (
+    <div className="mt-3 grid gap-3 rounded-media bg-cream p-3 text-sm sm:grid-cols-2">
+      {lines.length > 0 && (
+        <div>
+          <p className="text-[11px] tracking-[0.12em] text-ink/60 uppercase">Products</p>
+          <ul className="mt-1 grid gap-1">
+            {lines.map((l, i) => (
+              <li key={i} className="flex justify-between gap-3">
+                <span>{l.qty} × {l.name}</span>
+                <span className="shrink-0 tabular-nums text-ink/80">{l.line === null ? 'on request' : formatAmount(l.line)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 flex justify-between gap-3 border-t border-line pt-1 font-medium">
+            <span>Estimated total</span>
+            <span className="tabular-nums">{formatTotal(totals, 'to confirm')}</span>
+          </p>
+        </div>
+      )}
+      {(d || enquiry.date || enquiry.occasion) && (
+        <div>
+          <p className="text-[11px] tracking-[0.12em] text-ink/60 uppercase">{d?.method === 'pickup' ? 'Pickup' : 'Delivery'}</p>
+          {d?.method === 'delivery' && <p className="mt-1">To: {d.recipient || enquiry.name}</p>}
+          {d && <p className="whitespace-pre-line">{addressText(d)}</p>}
+          {enquiry.date && <p className="mt-1">Date: <strong className="font-medium">{formatDate(enquiry.date)}</strong></p>}
+          {enquiry.occasion && <p>Occasion: {enquiry.occasion}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EnquiryCard({ enquiry, onDelete, token, customerEmails, onChanged }) {
+  const [composing, setComposing] = useState(false);
   const digits = enquiry.phone?.replace(/\D/g, '').replace(/^0+/, '') || '';
   const waNumber = digits.length === 10 ? `91${digits}` : digits;
   return (
     <article className="rounded-card border border-line bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-base font-medium">{enquiry.name}</h3>
+          <h3 className="text-base font-medium">
+            {enquiry.orderNo && <span className="mr-2 rounded-full bg-blush px-2 py-0.5 text-xs font-medium tabular-nums">{enquiry.orderNo}</span>}
+            {enquiry.name}
+          </h3>
           <p className="text-xs text-ink/70">
-            {new Date(enquiry.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' })}
-            {enquiry.product && <> · Interested in <strong className="font-medium text-ink">{enquiry.product}</strong></>}
+            {when(enquiry.createdAt)}
+            {enquiry.product && !enquiry.items?.length && <> · Interested in <strong className="font-medium text-ink">{enquiry.product}</strong></>}
           </p>
         </div>
         {!enquiry.emailed && <span className="rounded-full border border-error/40 px-2 py-0.5 text-[11px] text-error">⚠ Email not sent — reply from here</span>}
       </div>
-      <p className="mt-3 whitespace-pre-line text-sm leading-6">{enquiry.message}</p>
+      {!enquiry.emailed && enquiry.emailError && (
+        <p className="mt-2 rounded-media bg-blush px-3 py-2 text-[11px] leading-4 text-error">Reason: {enquiry.emailError}</p>
+      )}
+      <OrderDetails enquiry={enquiry} />
+      {enquiry.message && <p className="mt-3 whitespace-pre-line text-sm leading-6">{enquiry.message}</p>}
+      {(enquiry.thanked === false || enquiry.replies?.length > 0) && (
+        <ul className="mt-3 grid gap-1 text-xs">
+          {enquiry.thanked === false && <li className="text-error">⚠ The automatic thank-you email to the customer could not be sent.</li>}
+          {enquiry.replies?.map((r) => (
+            <li key={String(r.at)} className={r.ok ? 'text-ink/75' : 'text-error'}>
+              {r.ok ? '📨 Sent' : '⚠ Not sent'} “{templateName(r.template)}” · {when(r.at)}{!r.ok && r.error ? ` — ${r.error}` : ''}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" className="admin-primary" aria-expanded={composing} onClick={() => setComposing((v) => !v)}>📨 Send email template</button>
         <a className="admin-secondary" href={`mailto:${enquiry.email}?subject=${encodeURIComponent('Your Florista enquiry')}`}>✉️ Reply by email</a>
         {waNumber && <a className="admin-secondary" href={`https://wa.me/${waNumber}`} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>}
         {digits && <a className="admin-secondary" href={`tel:+${waNumber}`}>📞 Call</a>}
         <button type="button" className="min-h-11 px-2 text-sm text-error underline sm:ml-auto" onClick={() => onDelete(enquiry)}>Delete</button>
       </div>
       <p className="mt-2 text-[11px] text-ink/60">{enquiry.email}{enquiry.phone && ` · ${enquiry.phone}`}</p>
+      {composing && (
+        <ReplyComposer enquiry={enquiry} token={token} configured={customerEmails} onClose={() => setComposing(false)} onSent={onChanged} />
+      )}
     </article>
+  );
+}
+
+/** Sends a test enquiry email from the server and shows EmailJS's exact answer. */
+function EmailCheck({ token }) {
+  const [state, setState] = useState({ busy: false, result: null });
+  async function send() {
+    setState({ busy: true, result: null });
+    try {
+      const result = await apiFetch('/api/admin/test-email', { method: 'POST', headers: authHeaders(token) });
+      setState({ busy: false, result });
+    } catch (err) {
+      setState({ busy: false, result: { ok: false, error: err.message } });
+    }
+  }
+  const { busy, result } = state;
+  return (
+    <div className="rounded-card border border-line bg-card p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-serif text-2xl">Enquiry emails</h2>
+          <p className="mt-1 text-xs text-ink/65">Check that Contact-form emails are being delivered.</p>
+        </div>
+        <button type="button" className="admin-secondary" disabled={busy} onClick={send}>{busy ? 'Sending…' : '✉️ Send test email'}</button>
+      </div>
+      {result?.ok && (
+        <p className="mt-3 text-sm" role="status">✅ Sent to {result.to}. Check that inbox (and the Spam folder) in a minute.</p>
+      )}
+      {result && !result.ok && (
+        <div className="mt-3 rounded-media bg-blush p-3 text-sm" role="alert">
+          <p className="font-medium text-error">⚠ Email could not be sent</p>
+          <p className="mt-1 text-xs leading-5 text-error">{result.error}</p>
+          {/non-browser/i.test(result.error) && (
+            <p className="mt-2 text-xs leading-5">
+              Fix: in EmailJS go to <strong>Account → Security</strong> and turn on <strong>“Allow EmailJS API for non-browser applications”</strong>, then try again.
+            </p>
+          )}
+          {/private key|access ?token/i.test(result.error) && (
+            <p className="mt-2 text-xs leading-5">Fix: ask your developer to set <strong>EMAILJS_PRIVATE_KEY</strong> on the server (EmailJS → Account → API keys).</p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -251,12 +359,16 @@ export default function DashboardTab({ token, onTutorial }) {
             </div>
           </div>
 
+          <EmailCheck token={token} />
+
           <div data-tour="dashboard-enquiries">
             <h2 className="font-serif text-3xl">Recent enquiries</h2>
-            <p className="mt-1 text-xs text-ink/65">Messages from the Contact page form (latest 25). Reply by email, WhatsApp or phone.</p>
+            <p className="mt-1 text-xs text-ink/65">Messages from the Contact page form (latest 25). Send a ready-made email template, or reply by WhatsApp or phone.</p>
             <div className="mt-4 grid gap-3">
               {data.enquiries.length ? (
-                data.enquiries.map((e) => <EnquiryCard key={e.id} enquiry={e} onDelete={remove} />)
+                data.enquiries.map((e) => (
+                  <EnquiryCard key={e.id} enquiry={e} onDelete={remove} token={token} customerEmails={data.customerEmails} onChanged={load} />
+                ))
               ) : (
                 <p className="text-sm text-ink/70">No enquiries yet.</p>
               )}

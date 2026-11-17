@@ -5,3 +5,6 @@ dist
 .env
 .env.local
 .env.*.local
+
+# editor settings for this computer only (e.g. Node path fix)
+.vscode/

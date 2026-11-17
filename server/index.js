@@ -7,6 +7,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { Binary, MongoClient, ObjectId } from 'mongodb';
+import { addressText, brandFrom, buildReply, formatDate, itemsSummary, orderTotals, formatAmount, ownerEnquiryEmail, thankYouEmail } from './emailTemplates.js';
 
 // ---------- config (all from environment variables) ----------
 const {
@@ -31,6 +32,7 @@ const {
   EMAILJS_TEMPLATE_ID,
   EMAILJS_PUBLIC_KEY,
   EMAILJS_PRIVATE_KEY,
+  EMAILJS_CUSTOMER_TEMPLATE_ID, // optional 2nd template: emails TO the customer (thank-you + admin replies)
   ENQUIRY_TO_EMAIL,
   WHATSAPP_NUMBER,
 } = process.env;
@@ -164,8 +166,8 @@ app.get(
 );
 
 // ---------- enquiry form (Contact page) ----------
-// The recipient is decided here (admin's email from the database, else ENQUIRY_TO_EMAIL), never by the
-// browser — so nobody can use this endpoint to send email to other people.
+// The owner's address comes only from ENQUIRY_TO_EMAIL (server env), never from the browser — so nobody
+// can use this endpoint to send email to other people. The customer only ever gets our fixed thank-you.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const enquiryLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
@@ -175,61 +177,200 @@ const enquiryLimiter = rateLimit({
   message: { error: 'Too many enquiries from this device. Please try again in a few minutes.' },
 });
 
+const PINCODE_RE = /^[1-9]\d{5}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Checks and cleans the Contact form. Product names/prices are taken from the database (not from the
+ * browser), so the shop always sees its real prices. Returns { data } or { error }.
+ */
+async function cleanEnquiry(body) {
+  const name = str(body.name, 100);
+  const email = str(body.email, 200);
+  const phone = str(body.phone, 30);
+  const message = str(body.message, 3000);
+  const phoneDigits = phone.replace(/[\s\-()]/g, '').replace(/^(\+91|0091|0)/, '');
+  if (name.length < 2) return { error: 'Please enter your name.' };
+  if (!EMAIL_RE.test(email)) return { error: 'Please enter a valid email address.' };
+  if (phone && !/^[6-9]\d{9}$/.test(phoneDigits)) return { error: 'Please enter a valid 10-digit phone number.' };
+
+  // Products: [{ id, qty }] — up to 10 different products, 1–50 of each.
+  const wanted = (Array.isArray(body.items) ? body.items : [])
+    .slice(0, 10)
+    .map((item) => ({ id: str(item?.id, 80), qty: Math.min(50, Math.max(1, Math.round(Number(item?.qty) || 1))), name: str(item?.name, 120), price: str(item?.price, 40) }))
+    .filter((item) => item.id || item.name);
+  const found = wanted.length ? await products.find({ _id: { $in: wanted.map((w) => w.id).filter(Boolean) } }).toArray() : [];
+  const items = wanted
+    .map((w) => {
+      const product = found.find((f) => f._id === w.id);
+      // Built-in items (before the shop's products are imported) are not in the database yet.
+      return product ? { id: product._id, name: product.name, price: product.price || '', qty: w.qty, collection: product.collection } : w.name ? { id: w.id, name: w.name, price: w.price, qty: w.qty } : null;
+    })
+    .filter(Boolean);
+  const product = str(body.product, 120) || itemsSummary(items);
+  if (!items.length && message.length < 10) return { error: 'Please choose a product or tell us a little about your idea (at least 10 characters).' };
+
+  // Delivery details (sent by the current form; older versions of the form did not have them).
+  let delivery = null;
+  const method = body.delivery?.method;
+  if (method === 'delivery' || method === 'pickup') {
+    delivery = { method };
+    if (method === 'delivery') {
+      delivery.recipient = str(body.delivery.recipient, 100);
+      delivery.address = str(body.delivery.address, 300);
+      delivery.area = str(body.delivery.area, 150);
+      delivery.city = str(body.delivery.city, 60);
+      delivery.pincode = str(body.delivery.pincode, 6);
+      if (!phoneDigits) return { error: 'Please enter your phone number so we can reach you for the delivery.' };
+      if (delivery.address.length < 5) return { error: 'Please enter the delivery address.' };
+      if (delivery.city.length < 2) return { error: 'Please enter the city.' };
+      if (!PINCODE_RE.test(delivery.pincode)) return { error: 'Please enter a valid 6-digit pincode.' };
+    }
+  }
+  const date = str(body.date, 10);
+  if (date) {
+    const max = today(new Date(Date.now() + 366 * 24 * 60 * 60 * 1000));
+    if (!DATE_RE.test(date) || date < today() || date > max) return { error: 'Please choose a date from today onwards.' };
+  }
+  const occasion = str(body.occasion, 40);
+  return { data: { name, email, phone, product, message, items, delivery, date, occasion } };
+}
+
+/** Next order/enquiry number: FL-1001, FL-1002, … */
+async function nextOrderNo() {
+  const doc = await meta.findOneAndUpdate({ _id: 'orderSeq' }, { $inc: { n: 1 } }, { upsert: true, returnDocument: 'after' });
+  return `FL-${1000 + (doc?.n ?? doc?.value?.n ?? 1)}`;
+}
+
 app.post(
   '/api/enquiry',
   enquiryLimiter,
   wrap(async (req, res) => {
     const body = req.body ?? {};
     if (body.company) return res.json({ ok: true }); // honeypot field filled → a bot; pretend success
-    const name = str(body.name, 100);
-    const email = str(body.email, 200);
-    const phone = str(body.phone, 30);
-    const product = str(body.product, 120);
-    const message = str(body.message, 3000);
-    const phoneDigits = phone.replace(/[\s\-()]/g, '').replace(/^(\+91|0091|0)/, '');
-    if (name.length < 2 || !EMAIL_RE.test(email) || message.length < 10 || (phone && !/^[6-9]\d{9}$/.test(phoneDigits))) {
-      return res.status(400).json({ error: 'Please check the form and try again.' });
-    }
+    const { data, error } = await cleanEnquiry(body);
+    if (error) return res.status(400).json({ error });
 
     // Every enquiry is kept for the admin dashboard, so nothing is lost even if the email fails.
-    const { insertedId } = await enquiries.insertOne({ name, email, phone, product, message, createdAt: new Date(), emailed: false });
+    const orderNo = await nextOrderNo();
+    const createdAt = new Date();
+    const enquiry = { orderNo, ...data, createdAt, emailed: false };
+    const { insertedId } = await enquiries.insertOne(enquiry);
     await daily.updateOne({ _id: today() }, { $inc: { enquiries: 1 } }, { upsert: true });
 
-    // The recipient is fixed by the developer (ENQUIRY_TO_EMAIL on the server) — the admin panel cannot change it.
-    const toEmail = ENQUIRY_TO_EMAIL;
-    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !toEmail) {
-      console.error('Enquiry email is not configured (EMAILJS_* / ENQUIRY_TO_EMAIL) — saved to the dashboard only.');
-      return res.json({ ok: true });
-    }
+    const receivedAt = createdAt.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
+    const brand = await currentBrand();
+    const [result, thanks] = await Promise.all([
+      sendEnquiryEmail({ ...enquiry, receivedAt }, brand),
+      // With the customer template set up, the thank-you comes from here (EmailJS's own auto-reply must be off).
+      EMAILJS_CUSTOMER_TEMPLATE_ID ? sendCustomerEmail({ to: data.email, toName: data.name, ...thankYouEmail(enquiry, brand) }) : null,
+    ]);
+    // Saved either way; if the email failed, the reason is shown on the enquiry in the dashboard.
+    await enquiries.updateOne(
+      { _id: insertedId },
+      { $set: { ...(result.ok ? { emailed: true } : { emailError: result.error }), ...(thanks ? { thanked: thanks.ok } : {}) } },
+    );
+    // The enquiry is received (it is in the dashboard), so the customer gets the normal thank-you message.
+    res.json({ ok: true, orderNo });
+  }),
+);
 
+/**
+ * Sends one email through EmailJS's REST API from this server.
+ * Requirements in the EmailJS dashboard (Account → Security):
+ *  • "Allow EmailJS API for non-browser applications" must be ON — otherwise EmailJS answers 403
+ *    ("API access from non-browser environments is currently disabled").
+ *  • If "Use Private Key" is ON, EMAILJS_PRIVATE_KEY must be set (sent as `accessToken`).
+ * Returns { ok } or { ok: false, error } with EmailJS's own message.
+ */
+async function emailjsSend(templateId, params) {
+  try {
     const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
+        template_id: templateId,
         user_id: EMAILJS_PUBLIC_KEY,
-        accessToken: EMAILJS_PRIVATE_KEY,
-        template_params: {
-          to_email: toEmail,
-          name,
-          email,
-          phone: phone || 'Not provided',
-          product: product || 'Not specified',
-          message,
-          submitted_at: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
-        },
+        ...(EMAILJS_PRIVATE_KEY ? { accessToken: EMAILJS_PRIVATE_KEY } : {}),
+        template_params: params,
       }),
     });
-    if (!response.ok) {
-      console.error('EmailJS error', response.status, await response.text());
-      // Still received (it is in the dashboard), so the customer gets the normal thank-you message.
-      return res.json({ ok: true });
-    }
-    await enquiries.updateOne({ _id: insertedId }, { $set: { emailed: true } });
-    res.json({ ok: true });
-  }),
-);
+    if (response.ok) return { ok: true };
+    const error = `EmailJS ${response.status}: ${(await response.text()).slice(0, 240)}`;
+    console.error(error);
+    return { ok: false, error };
+  } catch (err) {
+    const error = `Could not reach EmailJS: ${err.message}`;
+    console.error(error);
+    return { ok: false, error };
+  }
+}
+
+/**
+ * New-enquiry notification to the shop (recipient always ENQUIRY_TO_EMAIL).
+ * With the customer template set up, the shop gets the full designed email (products, prices, address…);
+ * otherwise the "Contact Us" template (EMAILJS_TEMPLATE_ID) is used with every detail in {{message}}.
+ */
+async function sendEnquiryEmail(e, brand) {
+  // The recipient is fixed by the developer (ENQUIRY_TO_EMAIL on the server) — the admin panel cannot change it.
+  if (!ENQUIRY_TO_EMAIL || !EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY || !(EMAILJS_CUSTOMER_TEMPLATE_ID || EMAILJS_TEMPLATE_ID)) {
+    const error = 'Email is not set up on the server (EMAILJS_SERVICE_ID / TEMPLATE_ID / PUBLIC_KEY / ENQUIRY_TO_EMAIL missing).';
+    console.error(error);
+    return { ok: false, error };
+  }
+  if (EMAILJS_CUSTOMER_TEMPLATE_ID) {
+    return sendCustomerEmail({ to: ENQUIRY_TO_EMAIL, toName: brand?.name || 'Florista', replyTo: e.email, ...ownerEnquiryEmail(e, brand || brandFrom({}, WHATSAPP_NUMBER)) });
+  }
+  const { lines, total } = orderTotals(e.items || []);
+  const details = [
+    e.orderNo && `Enquiry no.: ${e.orderNo}`,
+    lines.length && `Products:\n${lines.map((l) => `• ${l.qty} × ${l.name} — ${l.line === null ? 'price on request' : formatAmount(l.line)}`).join('\n')}`,
+    lines.length && `Estimated total: ${total === null ? 'to be confirmed' : formatAmount(total)}`,
+    e.delivery && `${e.delivery.method === 'pickup' ? 'Pickup' : `Deliver to: ${e.delivery.recipient || e.name}`}\n${addressText(e.delivery)}`,
+    e.date && `Preferred date: ${formatDate(e.date)}`,
+    e.occasion && `Occasion: ${e.occasion}`,
+  ].filter(Boolean);
+  return emailjsSend(EMAILJS_TEMPLATE_ID, {
+    to_email: ENQUIRY_TO_EMAIL,
+    name: e.name,
+    email: e.email,
+    phone: e.phone || 'Not provided',
+    product: e.product || 'Not specified',
+    message: [e.message, details.join('\n\n')].filter(Boolean).join('\n\n— — —\n'),
+    submitted_at: e.receivedAt || new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }),
+  });
+}
+
+/**
+ * Email to a customer (template EMAILJS_CUSTOMER_TEMPLATE_ID). That EmailJS template only contains
+ * Subject {{subject}}, To Email {{to_email}}, Reply To {{reply_to}} and content {{{message_html}}} —
+ * the actual design comes from server/emailTemplates.js.
+ */
+async function sendCustomerEmail({ to, toName, subject, html, replyTo }) {
+  if (!EMAILJS_CUSTOMER_TEMPLATE_ID || !EMAILJS_SERVICE_ID || !EMAILJS_PUBLIC_KEY) {
+    return { ok: false, code: 'not_configured', error: 'Customer emails are not set up yet (EMAILJS_CUSTOMER_TEMPLATE_ID is missing on the server).' };
+  }
+  return emailjsSend(EMAILJS_CUSTOMER_TEMPLATE_ID, {
+    to_email: to,
+    email: to, // same address under the old auto-reply name, in case the template's To Email still says {{email}}
+    to_name: toName,
+    name: toName,
+    subject,
+    message_html: html,
+    reply_to: replyTo || ENQUIRY_TO_EMAIL || '',
+  });
+}
+
+/** Shop details for customer emails, from the admin's saved settings. */
+async function currentBrand() {
+  const docs = await siteContent.find({ _id: { $in: ['site.whatsapp', 'site.business', 'site.instagram'] } }).toArray();
+  return brandFrom(Object.fromEntries(docs.map(({ _id, value }) => [_id, value])), WHATSAPP_NUMBER);
+}
+
+if (EMAILJS_SERVICE_ID && !EMAILJS_PRIVATE_KEY) {
+  console.warn('EMAILJS_PRIVATE_KEY is empty — if "Use Private Key" is on in EmailJS, enquiry emails will be rejected.');
+}
 
 // ---------- visitor stats (anonymous) ----------
 // The website sends: { type: 'pageview', path, vid } or { type: 'whatsapp', product?, vid }.
@@ -379,7 +520,27 @@ app.get(
       topPages: sumMaps(docs, 'pages').slice(0, 8).map(([page, views]) => ({ page, views })),
       topProducts: sumMaps(docs, 'orders').slice(0, 8).map(([name, clicks]) => ({ name, clicks })),
       enquiries: recent.map(({ _id, ...e }) => ({ id: String(_id), ...e })),
+      customerEmails: Boolean(EMAILJS_CUSTOMER_TEMPLATE_ID),
     });
+  }),
+);
+
+// "Send test email" button: sends one test enquiry to ENQUIRY_TO_EMAIL and reports EmailJS's exact answer.
+app.post(
+  '/api/admin/test-email',
+  wrap(async (_req, res) => {
+    const result = await sendEnquiryEmail(
+      {
+        orderNo: 'TEST',
+        name: 'Florista website (test)',
+        email: ENQUIRY_TO_EMAIL || 'test@example.com',
+        phone: '',
+        product: 'Test email',
+        message: 'This is a test email sent from the admin dashboard. If you can read this, website enquiries are being delivered.',
+      },
+      await currentBrand(),
+    );
+    res.json({ ...result, to: ENQUIRY_TO_EMAIL ? ENQUIRY_TO_EMAIL.replace(/^(.{2}).*(@.*)$/, '$1…$2') : null });
   }),
 );
 
@@ -389,6 +550,24 @@ app.delete(
     if (!ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Not found' });
     await enquiries.deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ ok: true });
+  }),
+);
+
+// Admin replies to an enquiry with one of the ready-made templates (server/emailTemplates.js).
+// The recipient is always the email address saved on that enquiry.
+app.post(
+  '/api/admin/enquiries/:id/reply',
+  wrap(async (req, res) => {
+    if (!ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    const enquiry = await enquiries.findOne({ _id: new ObjectId(req.params.id) });
+    if (!enquiry) return res.status(404).json({ error: 'This enquiry no longer exists.' });
+    const template = String(req.body?.template ?? '');
+    const email = buildReply(template, req.body?.fields, await currentBrand());
+    if (email.error) return res.status(400).json({ error: email.error });
+    const result = await sendCustomerEmail({ to: enquiry.email, toName: enquiry.name, ...email });
+    const entry = { template, subject: email.subject, at: new Date(), ok: result.ok, ...(result.ok ? {} : { error: result.error }) };
+    await enquiries.updateOne({ _id: enquiry._id }, { $push: { replies: { $each: [entry], $slice: -20 } } });
+    res.json(result);
   }),
 );
 

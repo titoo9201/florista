@@ -32,7 +32,7 @@ export const TOUR_STEPS = [
     view: { tab: 'dashboard', sub: null },
     target: 'dashboard-enquiries',
     title: 'Enquiries',
-    body: 'Every message from the Contact page form is saved here — even if the email did not arrive. Reply by email, WhatsApp or phone with one tap, and delete old ones.',
+    body: 'Every message from the Contact page form is saved here — even if the email did not arrive. Tap “Send email template” to send a ready-made email (price & details, order confirmed, or questions) — fill a few boxes, check the preview, send. You can also reply by WhatsApp or phone, and delete old ones.',
   },
   {
     id: 'collections',

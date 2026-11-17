@@ -59,6 +59,11 @@ const BY_PATH = [
   [/\.enquiryForm\.(submit)$/, { note: 'Text on the send button. 1–3 words.', example: 'Send Enquiry' }],
   [/\.enquiryForm\.(sending)$/, { note: 'Button text while the enquiry is being sent.', example: 'Sending…' }],
   [/\.enquiryForm\.(success)$/, { note: 'Shown after the enquiry is sent successfully.', example: 'Thank you! We’ll be in touch soon.' }],
+  [/\.enquiryForm\.successWithNumber$/, {
+    note: 'Shown after sending, with the customer’s enquiry number. Keep {orderNo} exactly as written — it becomes e.g. FL-1001.',
+    example: 'Thank you! Your enquiry number is {orderNo}. We’ve emailed you a copy and will be in touch within 24 hours.',
+    check: (v) => (v.includes('{orderNo}') ? '' : 'Keep {orderNo} so the customer sees their enquiry number.'),
+  }],
   [/\.enquiryForm\.(failure)$/, { note: 'Shown if the enquiry could not be sent.', example: 'Sorry, your enquiry couldn’t be sent. Please try again in a moment.' }],
   [/\.enquiryForm\.(privacy)$/, { note: 'Small privacy note under the form. Say how you use the customer’s details.', example: 'We only use your details to reply to your enquiry and never share them.' }],
   [/\.unit\.one$/, { note: 'Word used when exactly 1 item is shown (“01 creation”).', example: 'creation' }],
